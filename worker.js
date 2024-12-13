@@ -30,6 +30,15 @@ async function handleRequest(request) {
         });
       }
 
+      if (
+        isNaN(Number(antiTokens)) ||
+        isNaN(Number(proTokens)) ||
+        isNaN(Number(baryonTokens)) ||
+        isNaN(Number(photonTokens))
+      ) {
+        return createCorsResponse("Invalid token values", { status: 400 });
+      }
+
       // Check if the wallet has already voted
       /*
       const existingVote = await KV.get(wallet);
@@ -66,10 +75,10 @@ async function handleRequest(request) {
         };
       }
 
-      accountBalances[wallet].anti += antiTokens;
-      accountBalances[wallet].pro += proTokens;
-      accountBalances[wallet].baryon += baryonTokens;
-      accountBalances[wallet].photon += photonTokens;
+      accountBalances[wallet].anti += Number(antiTokens);
+      accountBalances[wallet].pro += Number(proTokens);
+      accountBalances[wallet].baryon += Number(baryonTokens);
+      accountBalances[wallet].photon += Number(photonTokens);
 
       await KV.put(accountBalancesKey, JSON.stringify(accountBalances));
 
@@ -80,6 +89,74 @@ async function handleRequest(request) {
     }
   }
 
+  if (request.method === "POST" && path === "/claim") {
+    try {
+      const {
+        wallet,
+        antiTokens,
+        proTokens,
+        baryonTokens,
+        photonTokens,
+        signature,
+      } = await request.json();
+
+      if (!wallet || !signature) {
+        return createCorsResponse("Missing required parameters", {
+          status: 400,
+        });
+      }
+
+      // Check if the wallet has already voted
+      /*
+      const existingVote = await KV.get(wallet);
+      if (existingVote) {
+        return createCorsResponse("You have already voted", { status: 400 });
+      }
+      */
+
+      // Create vote record
+      const claimRecord = {
+        anti: -antiTokens,
+        pro: -proTokens,
+        baryon: -baryonTokens,
+        photon: -photonTokens,
+        wallet: wallet,
+        signature: signature,
+      };
+
+      // Save the vote
+      await KV.put(wallet, JSON.stringify(claimRecord));
+
+      // Update account balances
+      const accountBalancesKey = "account_balances";
+      const accountBalances = JSON.parse(
+        (await KV.get(accountBalancesKey)) || "{}"
+      );
+
+      if (!accountBalances[wallet]) {
+        accountBalances[wallet] = {
+          anti: 0,
+          pro: 0,
+          baryon: 0,
+          photon: 0,
+        };
+      }
+
+      accountBalances[wallet].anti -= Number(antiTokens);
+      accountBalances[wallet].pro -= Number(proTokens);
+      accountBalances[wallet].baryon -= Number(baryonTokens);
+      accountBalances[wallet].photon -= Number(photonTokens);
+
+      await KV.put(accountBalancesKey, JSON.stringify(accountBalances));
+
+      return createCorsResponse("Claim recorded successfully", { status: 200 });
+    } catch (error) {
+      console.error("ERROR_HANDLING_CLAIM:", error);
+      return createCorsResponse("Invalid request", { status: 400 });
+    }
+  }
+
+  /*
   if (request.method === "GET" && path.startsWith("/check/")) {
     const wallet = path.split("/")[2];
     if (!wallet) {
@@ -91,6 +168,7 @@ async function handleRequest(request) {
       status: 200,
     });
   }
+  */
 
   if (request.method === "GET" && path.startsWith("/balances/")) {
     const wallet = path.split("/")[2];
