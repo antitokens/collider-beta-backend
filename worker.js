@@ -1,8 +1,74 @@
+import { Connection, PublicKey } from "@solana/web3.js";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { Buffer } from "buffer";
+
+const endpoint =
+  "https://greatest-smart-tent.solana-mainnet.quiknode.pro/c61afb9af2756c92f1dc812ac2a5b8b68c0602ff";
+const ANTI_TOKEN_MINT = "EWkvvNnLasHCBpeDbitzx9pC8PMX4QSdnMPfxGsFpump";
+const PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump";
 const KV = Antitoken_Collider_Beta;
 
 addEventListener("fetch", (event) => {
   event.respondWith(handleRequest(event.request));
 });
+
+async function getTokenSupply(tokenMintAddress) {
+  try {
+    const mintPubkey = new PublicKey(tokenMintAddress);
+    const connection = new Connection(endpoint, "confirmed");
+    // Get token supply
+    const supply = await connection.getTokenSupply(mintPubkey);
+    // Get decimals
+    const mintInfo = await connection.getParsedAccountInfo(mintPubkey);
+    const decimals = mintInfo.value?.data.parsed.info.decimals || 0;
+
+    return {
+      totalSupply: supply.value.uiAmount,
+      decimals: decimals,
+      rawSupply: supply.value.amount,
+    };
+  } catch (error) {
+    console.error("Error fetching token supply:", error);
+    throw error;
+  }
+}
+
+async function getTokenHolders(tokenMintAddress) {
+  try {
+    const connection = new Connection(endpoint, "confirmed");
+    // Get all accounts that hold this token
+    const accounts = await connection.getProgramAccounts(TOKEN_PROGRAM_ID, {
+      filters: [
+        {
+          dataSize: 165, // Size of token account
+        },
+        {
+          memcmp: {
+            offset: 0,
+            bytes: tokenMintAddress,
+          },
+        },
+      ],
+    });
+
+    // Filter out accounts with zero balance
+    const activeAccounts = accounts.filter((account) => {
+      const data = Buffer.from(account.account.data);
+      const amount = data.readBigUInt64LE(64);
+      return amount > 0;
+    });
+
+    return {
+      totalHolders: activeAccounts.length,
+      holderAccounts: activeAccounts.map((account) =>
+        account.pubkey.toString()
+      ),
+    };
+  } catch (error) {
+    console.error("Error fetching token holders:", error);
+    throw error;
+  }
+}
 
 async function handleRequest(request) {
   const url = new URL(request.url);
@@ -98,12 +164,34 @@ async function handleRequest(request) {
           value2: 0 * Math.random(),
         },
         votersData: {
-          total: 1e5,
+          total: await Promise.all([
+            getTokenHolders(ANTI_TOKEN_MINT),
+            getTokenHolders(PRO_TOKEN_MINT),
+          ]).then(([antiHolders, proHolders]) => {
+            const proHoldersSet = new Set(proHolders.holderAccounts);
+            const commonHolders = antiHolders.holderAccounts.filter((holder) =>
+              proHoldersSet.has(holder)
+            );
+            // Use filter and Set.has for efficient comparison
+            return commonHolders.length > 0
+              ? antiHolders.totalHolders +
+                  proHolders.totalHolders -
+                  antiHolders.holderAccounts.filter((holder) =>
+                    proHoldersSet.has(holder)
+                  ).length
+              : antiHolders.totalHolders + proHolders.totalHolders;
+          }),
           antiVoters,
           proVoters,
         },
         tokensData: {
-          total: 1e9,
+          total: await Promise.all([
+            getTokenSupply(ANTI_TOKEN_MINT),
+            getTokenSupply(PRO_TOKEN_MINT),
+          ]).then(
+            ([antiSupply, proSupply]) =>
+              antiSupply.totalSupply + proSupply.totalSupply
+          ),
           antiTokens: totalAntiTokens,
           proTokens: totalProTokens,
         },

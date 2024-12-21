@@ -8,6 +8,9 @@
     "deploy": "npx wrangler deploy worker.js"
   },
   "devDependencies": {
+    "@solana/spl-token": "^0.4.9",
+    "@solana/web3.js": "^1.98.0",
+    "buffer": "^6.0.3",
     "miniflare": "^3.20241205.0",
     "wrangler": "^3.95.0"
   }
