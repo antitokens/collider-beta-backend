@@ -86,12 +86,12 @@ async function handleRequest(request) {
         (await KV.get("account_balances")) || "{}"
       );
 
-      // Calculate voters data
-      let antiVoters = 0;
-      let proVoters = 0;
+      // Calculate Emissions data
+      let totalBaryonTokens = 0;
+      let totalPhotonTokens = 0;
       Object.values(accountBalances).forEach((balance) => {
-        if (balance.anti > balance.pro) antiVoters++;
-        if (balance.pro > balance.anti) proVoters++;
+        totalBaryonTokens += balance.baryon;
+        totalPhotonTokens += balance.photon;
       });
 
       // Calculate total tokens
@@ -121,8 +121,10 @@ async function handleRequest(request) {
       // Iterate through all votes in KV
       const allVotes = await KV.list(); // Get all keys
       for (const key of allVotes.keys) {
-        if (key !== "account_balances") {
-          const vote = JSON.parse(await KV.get(key));
+        if (key.name !== "account_balances") {
+          const _key = await KV.get(key.name);
+          console.log(key.name, _key);
+          const vote = JSON.parse(_key);
           const voteDate = new Date(vote.timestamp).toLocaleDateString(
             "en-US",
             { month: "short", day: "numeric" }
@@ -163,26 +165,10 @@ async function handleRequest(request) {
           value1: 0 * Math.random(),
           value2: 0 * Math.random(),
         },
-        votersData: {
-          total: await Promise.all([
-            getTokenHolders(ANTI_TOKEN_MINT),
-            getTokenHolders(PRO_TOKEN_MINT),
-          ]).then(([antiHolders, proHolders]) => {
-            const proHoldersSet = new Set(proHolders.holderAccounts);
-            const commonHolders = antiHolders.holderAccounts.filter((holder) =>
-              proHoldersSet.has(holder)
-            );
-            // Use filter and Set.has for efficient comparison
-            return commonHolders.length > 0
-              ? antiHolders.totalHolders +
-                  proHolders.totalHolders -
-                  antiHolders.holderAccounts.filter((holder) =>
-                    proHoldersSet.has(holder)
-                  ).length
-              : antiHolders.totalHolders + proHolders.totalHolders;
-          }),
-          antiVoters,
-          proVoters,
+        emissionsData: {
+          total: totalBaryonTokens + totalPhotonTokens,
+          baryonTokens: totalBaryonTokens,
+          photonTokens: totalPhotonTokens,
         },
         tokensData: {
           total: await Promise.all([
