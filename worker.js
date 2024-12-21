@@ -88,7 +88,7 @@ async function handleRequest(request) {
         (await KV.get("account_balances")) || "{}"
       );
 
-      // Calculate Emissions data
+      // Calculate emissions data
       let totalBaryonTokens = 0;
       let totalPhotonTokens = 0;
       Object.values(accountBalances).forEach((balance) => {
@@ -117,7 +117,7 @@ async function handleRequest(request) {
       // Get all vote records and bin them by date
       const votesByDay = {};
       dates.forEach((date) => {
-        votesByDay[date] = { pro: 0, anti: 0 };
+        votesByDay[date] = { pro: 0, anti: 0, baryon: 0, photon: 0 };
       });
 
       // Iterate through all votes in KV
@@ -137,6 +137,8 @@ async function handleRequest(request) {
                 if (votesByDay[voteDate]) {
                   votesByDay[voteDate].anti += Number(vote.anti) || 0;
                   votesByDay[voteDate].pro += Number(vote.pro) || 0;
+                  votesByDay[voteDate].baryon += Number(vote.baryon) || 0;
+                  votesByDay[voteDate].photon += Number(vote.photon) || 0;
                 }
               }
             });
@@ -147,6 +149,8 @@ async function handleRequest(request) {
       // Calculate token ranges
       const tokenRangesPro = { "0-100k": 0, "100k-1m": 0, "1-10m": 0 };
       const tokenRangesAnti = { "0-100k": 0, "100k-1m": 0, "1-10m": 0 };
+      const tokenRangesPhoton = { "0-100k": 0, "100k-1m": 0, "1-10m": 0 };
+      const tokenRangesBaryon = { "0-100k": 0, "100k-1m": 0, "1-10m": 0 };
 
       Object.values(accountBalances).forEach((balance) => {
         // Pro token ranges
@@ -162,10 +166,24 @@ async function handleRequest(request) {
         else if (balance.anti > 100000 && balance.anti <= 1000000)
           tokenRangesAnti["100k-1m"]++;
         else if (balance.anti > 1000000) tokenRangesAnti["1-10m"]++;
+
+        // Photon token ranges
+        if (balance.photon > 0 && balance.photon <= 100000)
+          tokenRangesPhoton["0-100k"]++;
+        else if (balance.photon > 100000 && balance.photon <= 1000000)
+          tokenRangesPhoton["100k-1m"]++;
+        else if (balance.photon > 1000000) tokenRangesPhoton["1-10m"]++;
+
+        // Baryon token ranges
+        if (balance.baryon > 0 && balance.baryon <= 100000)
+          tokenRangesBaryon["0-100k"]++;
+        else if (balance.baryon > 100000 && balance.baryon <= 1000000)
+          tokenRangesBaryon["100k-1m"]++;
+        else if (balance.baryon > 1000000) tokenRangesBaryon["1-10m"]++;
       });
 
       const metadata = {
-        startTime: START_TIME, 
+        startTime: START_TIME,
         endTime: END_TIME,
         voterDistribution: {
           value1: 0 * Math.random(),
@@ -195,8 +213,12 @@ async function handleRequest(request) {
           timestamps: dates,
           proVotes: dates.map((date) => votesByDay[date].pro),
           antiVotes: dates.map((date) => votesByDay[date].anti),
+          photonVotes: dates.map((date) => votesByDay[date].photon),
+          baryonVotes: dates.map((date) => votesByDay[date].baryon),
           tokenRangesPro,
           tokenRangesAnti,
+          tokenRangesPhoton,
+          tokenRangesBaryon,
         },
       };
 
