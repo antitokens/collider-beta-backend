@@ -123,15 +123,21 @@ async function handleRequest(request) {
       for (const key of allVotes.keys) {
         if (key.name !== "account_balances") {
           const _key = await KV.get(key.name);
-          console.log(key.name, _key);
-          const vote = JSON.parse(_key);
-          const voteDate = new Date(vote.timestamp).toLocaleDateString(
-            "en-US",
-            { month: "short", day: "numeric" }
-          );
-          if (votesByDay[voteDate]) {
-            votesByDay[voteDate].anti += Number(vote.anti) || 0;
-            votesByDay[voteDate].pro += Number(vote.pro) || 0;
+          if (_key) {
+            const votes = JSON.parse(_key);
+            Object.values(votes).forEach((vote) => {
+              if (vote && vote.timestamp) {
+                const voteDate = new Date(vote.timestamp).toLocaleDateString(
+                  "en-US",
+                  { month: "short", day: "numeric" }
+                );
+
+                if (votesByDay[voteDate]) {
+                  votesByDay[voteDate].anti += Number(vote.anti) || 0;
+                  votesByDay[voteDate].pro += Number(vote.pro) || 0;
+                }
+              }
+            });
           }
         }
       }
@@ -143,17 +149,18 @@ async function handleRequest(request) {
       Object.values(accountBalances).forEach((balance) => {
         // Pro token ranges
         if (balance.pro > 0 && balance.pro <= 100000)
-          tokenRangesPro["0-100k"]++;
+          tokenRangesPro["0-100k"] += balance.pro;
         else if (balance.pro > 100000 && balance.pro <= 1000000)
-          tokenRangesPro["100k-1m"]++;
-        else if (balance.pro > 1000000) tokenRangesPro["1-10m"]++;
+          tokenRangesPro["100k-1m"] += balance.pro;
+        else if (balance.pro > 1000000) tokenRangesPro["1-10m"] += balance.pro;
 
         // Anti token ranges
         if (balance.anti > 0 && balance.anti <= 100000)
-          tokenRangesAnti["0-100k"]++;
+          tokenRangesAnti["0-100k"] += balance.anti;
         else if (balance.anti > 100000 && balance.anti <= 1000000)
-          tokenRangesAnti["100k-1m"]++;
-        else if (balance.anti > 1000000) tokenRangesAnti["1-10m"]++;
+          tokenRangesAnti["100k-1m"] += balance.anti;
+        else if (balance.anti > 1000000)
+          tokenRangesAnti["1-10m"] += balance.anti;
       });
 
       const metadata = {
@@ -235,8 +242,14 @@ async function handleRequest(request) {
         timestamp: timestamp,
       };
 
-      // Save the vote
-      await KV.put(wallet, JSON.stringify(voteRecord));
+      // Get existing votes or create new object
+      const existingVotes = JSON.parse((await KV.get(wallet)) || "{}");
+      // Find the next index
+      const nextIndex = Object.keys(existingVotes).length + 1;
+      // Add new vote with index
+      existingVotes[nextIndex] = voteRecord;
+      // Save the updated votes
+      await KV.put(wallet, JSON.stringify(existingVotes));
 
       // Update account balances
       const accountBalancesKey = "account_balances";
@@ -296,8 +309,14 @@ async function handleRequest(request) {
         timestamp: timestamp,
       };
 
-      // Save the vote
-      await KV.put(wallet, JSON.stringify(claimRecord));
+      // Get existing claims or create new object
+      const existingClaims = JSON.parse((await KV.get(wallet)) || "{}");
+      // Find the next index
+      const nextIndex = Object.keys(existingClaims).length + 1;
+      // Add new claim with index
+      existingClaims[nextIndex] = claimRecord;
+      // Save the updated claims
+      await KV.put(wallet, JSON.stringify(existingClaims));
 
       // Update account balances
       const accountBalancesKey = "account_balances";
