@@ -119,7 +119,7 @@ async function handleRequest(request) {
       });
 
       // Iterate through all votes in KV
-      const allVotes = await KV.list(); // Get all keys
+      const allVotes = await KV.list();
       for (const key of allVotes.keys) {
         if (key.name !== "account_balances") {
           const _key = await KV.get(key.name);
@@ -149,18 +149,17 @@ async function handleRequest(request) {
       Object.values(accountBalances).forEach((balance) => {
         // Pro token ranges
         if (balance.pro > 0 && balance.pro <= 100000)
-          tokenRangesPro["0-100k"] += balance.pro;
+          tokenRangesPro["0-100k"]++;
         else if (balance.pro > 100000 && balance.pro <= 1000000)
-          tokenRangesPro["100k-1m"] += balance.pro;
-        else if (balance.pro > 1000000) tokenRangesPro["1-10m"] += balance.pro;
+          tokenRangesPro["100k-1m"]++;
+        else if (balance.pro > 1000000) tokenRangesPro["1-10m"]++;
 
         // Anti token ranges
         if (balance.anti > 0 && balance.anti <= 100000)
-          tokenRangesAnti["0-100k"] += balance.anti;
+          tokenRangesAnti["0-100k"]++;
         else if (balance.anti > 100000 && balance.anti <= 1000000)
-          tokenRangesAnti["100k-1m"] += balance.anti;
-        else if (balance.anti > 1000000)
-          tokenRangesAnti["1-10m"] += balance.anti;
+          tokenRangesAnti["100k-1m"]++;
+        else if (balance.anti > 1000000) tokenRangesAnti["1-10m"]++;
       });
 
       const metadata = {
