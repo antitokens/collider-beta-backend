@@ -7,6 +7,8 @@ const endpoint =
 const ANTI_TOKEN_MINT = "EWkvvNnLasHCBpeDbitzx9pC8PMX4QSdnMPfxGsFpump";
 const PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump";
 const KV = Antitoken_Collider_Beta;
+const START_TIME = "2024-12-10T07:30:00Z";
+const END_TIME = "2024-12-31T09:30:00Z";
 
 addEventListener("fetch", (event) => {
   event.respondWith(handleRequest(event.request));
@@ -163,6 +165,8 @@ async function handleRequest(request) {
       });
 
       const metadata = {
+        startTime: START_TIME, 
+        endTime: END_TIME,
         voterDistribution: {
           value1: 0 * Math.random(),
           value2: 0 * Math.random(),
