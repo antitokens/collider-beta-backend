@@ -91,9 +91,11 @@ async function handleRequest(request) {
       // Calculate emissions data
       let totalBaryonTokens = 0;
       let totalPhotonTokens = 0;
+      let photonBalances = [];
       Object.values(accountBalances).forEach((balance) => {
         totalBaryonTokens += balance.baryon;
         totalPhotonTokens += balance.photon;
+        photonBalances.push(balance.photon);
       });
 
       // Calculate total tokens
@@ -192,6 +194,7 @@ async function handleRequest(request) {
         totalDistribution: {
           value1: totalBaryonTokens,
           value2: totalPhotonTokens,
+          value3: photonBalances,
         },
         emissionsData: {
           total: totalBaryonTokens + totalPhotonTokens,
