@@ -4,8 +4,8 @@ import { Buffer } from "buffer";
 
 const endpoint =
   "https://greatest-smart-tent.solana-mainnet.quiknode.pro/c61afb9af2756c92f1dc812ac2a5b8b68c0602ff";
-const ANTI_TOKEN_MINT = "EWkvvNnLasHCBpeDbitzx9pC8PMX4QSdnMPfxGsFpump";
-const PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump";
+const ANTI_TOKEN_MINT = "HB8KrN7Bb3iLWUPsozp67kS4gxtbA4W5QJX4wKPvpump";
+const PRO_TOKEN_MINT = "CWFa2nxUMf5d1WwKtG9FS9kjUKGwKXWSjH8hFdWspump";
 const KV = Antitoken_Collider_Beta;
 const START_TIME = "2024-12-10T07:30:00Z";
 const END_TIME = "2024-12-31T09:30:00Z";
@@ -190,8 +190,8 @@ async function handleRequest(request) {
           value2: 0 * Math.random(),
         },
         totalDistribution: {
-          value1: 0 * Math.random(),
-          value2: 0 * Math.random(),
+          value1: totalBaryonTokens,
+          value2: totalPhotonTokens,
         },
         emissionsData: {
           total: totalBaryonTokens + totalPhotonTokens,
