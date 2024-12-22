@@ -104,7 +104,7 @@ async function handleRequest(request) {
         totalProTokens += balance.pro;
       });
 
-      // Calculate votes over time (last 5 days)
+      // Calculate events over time (last 5 days)
       const dates = Array.from({ length: 5 }, (_, i) => {
         const date = new Date();
         date.setDate(date.getDate() - i);
@@ -114,31 +114,31 @@ async function handleRequest(request) {
         });
       }).reverse();
 
-      // Get all vote records and bin them by date
-      const votesByDay = {};
+      // Get all event records and bin them by date
+      const eventsByDay = {};
       dates.forEach((date) => {
-        votesByDay[date] = { pro: 0, anti: 0, baryon: 0, photon: 0 };
+        eventsByDay[date] = { pro: 0, anti: 0, baryon: 0, photon: 0 };
       });
 
-      // Iterate through all votes in KV
-      const allVotes = await KV.list();
-      for (const key of allVotes.keys) {
+      // Iterate through all events in KV
+      const allEvents = await KV.list();
+      for (const key of allEvents.keys) {
         if (key.name !== "account_balances") {
           const _key = await KV.get(key.name);
           if (_key) {
-            const votes = JSON.parse(_key);
-            Object.values(votes).forEach((vote) => {
-              if (vote && vote.timestamp) {
-                const voteDate = new Date(vote.timestamp).toLocaleDateString(
+            const events = JSON.parse(_key);
+            Object.values(events).forEach((event) => {
+              if (event && event.timestamp) {
+                const eventDate = new Date(event.timestamp).toLocaleDateString(
                   "en-US",
                   { month: "short", day: "numeric" }
                 );
 
-                if (votesByDay[voteDate]) {
-                  votesByDay[voteDate].anti += Number(vote.anti) || 0;
-                  votesByDay[voteDate].pro += Number(vote.pro) || 0;
-                  votesByDay[voteDate].baryon += Number(vote.baryon) || 0;
-                  votesByDay[voteDate].photon += Number(vote.photon) || 0;
+                if (eventsByDay[eventDate]) {
+                  eventsByDay[eventDate].anti += Number(event.anti) || 0;
+                  eventsByDay[eventDate].pro += Number(event.pro) || 0;
+                  eventsByDay[eventDate].baryon += Number(event.baryon) || 0;
+                  eventsByDay[eventDate].photon += Number(event.photon) || 0;
                 }
               }
             });
@@ -185,7 +185,7 @@ async function handleRequest(request) {
       const metadata = {
         startTime: START_TIME,
         endTime: END_TIME,
-        voterDistribution: {
+        colliderDistribution: {
           value1: 0 * Math.random(),
           value2: 0 * Math.random(),
         },
@@ -198,7 +198,7 @@ async function handleRequest(request) {
           baryonTokens: totalBaryonTokens,
           photonTokens: totalPhotonTokens,
         },
-        tokensData: {
+        collisionsData: {
           total: await Promise.all([
             getTokenSupply(ANTI_TOKEN_MINT),
             getTokenSupply(PRO_TOKEN_MINT),
@@ -209,12 +209,12 @@ async function handleRequest(request) {
           antiTokens: totalAntiTokens,
           proTokens: totalProTokens,
         },
-        votesOverTime: {
+        eventsOverTime: {
           timestamps: dates,
-          proVotes: dates.map((date) => votesByDay[date].pro),
-          antiVotes: dates.map((date) => votesByDay[date].anti),
-          photonVotes: dates.map((date) => votesByDay[date].photon),
-          baryonVotes: dates.map((date) => votesByDay[date].baryon),
+          proEvents: dates.map((date) => eventsByDay[date].pro),
+          antiEvents: dates.map((date) => eventsByDay[date].anti),
+          photonEvents: dates.map((date) => eventsByDay[date].photon),
+          baryonEvents: dates.map((date) => eventsByDay[date].baryon),
           tokenRangesPro,
           tokenRangesAnti,
           tokenRangesPhoton,
@@ -229,7 +229,7 @@ async function handleRequest(request) {
     }
   }
 
-  if (request.method === "POST" && path === "/vote") {
+  if (request.method === "POST" && path === "/predict") {
     try {
       const {
         wallet,
@@ -256,8 +256,8 @@ async function handleRequest(request) {
         return createCorsResponse("Invalid token values", { status: 400 });
       }
 
-      // Create vote record
-      const voteRecord = {
+      // Create event record
+      const eventRecord = {
         anti: antiTokens,
         pro: proTokens,
         baryon: baryonTokens,
@@ -267,14 +267,14 @@ async function handleRequest(request) {
         timestamp: timestamp,
       };
 
-      // Get existing votes or create new object
-      const existingVotes = JSON.parse((await KV.get(wallet)) || "{}");
+      // Get existing events or create new object
+      const existingEvents = JSON.parse((await KV.get(wallet)) || "{}");
       // Find the next index
-      const nextIndex = Object.keys(existingVotes).length + 1;
-      // Add new vote with index
-      existingVotes[nextIndex] = voteRecord;
-      // Save the updated votes
-      await KV.put(wallet, JSON.stringify(existingVotes));
+      const nextIndex = Object.keys(existingEvents).length + 1;
+      // Add new event with index
+      existingEvents[nextIndex] = eventRecord;
+      // Save the updated events
+      await KV.put(wallet, JSON.stringify(existingEvents));
 
       // Update account balances
       const accountBalancesKey = "account_balances";
@@ -298,7 +298,7 @@ async function handleRequest(request) {
 
       await KV.put(accountBalancesKey, JSON.stringify(accountBalances));
 
-      return createCorsResponse("Vote recorded successfully", { status: 200 });
+      return createCorsResponse("Event recorded successfully", { status: 200 });
     } catch (error) {
       console.error("ERROR_HANDLING_VOTE:", error);
       return createCorsResponse("Invalid request", { status: 400 });
@@ -323,7 +323,7 @@ async function handleRequest(request) {
         });
       }
 
-      // Create vote record
+      // Create event record
       const claimRecord = {
         anti: -antiTokens,
         pro: -proTokens,
