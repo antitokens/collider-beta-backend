@@ -91,19 +91,25 @@ async function handleRequest(request) {
       // Calculate emissions data
       let totalBaryonTokens = 0;
       let totalPhotonTokens = 0;
+      let baryonBalances = [];
       let photonBalances = [];
       Object.values(accountBalances).forEach((balance) => {
         totalBaryonTokens += balance.baryon;
         totalPhotonTokens += balance.photon;
+        baryonBalances.push(balance.baryon);
         photonBalances.push(balance.photon);
       });
 
       // Calculate total tokens
       let totalAntiTokens = 0;
       let totalProTokens = 0;
+      let antiBalances = [];
+      let proBalances = [];
       Object.values(accountBalances).forEach((balance) => {
         totalAntiTokens += balance.anti;
         totalProTokens += balance.pro;
+        antiBalances.push(balance.anti);
+        proBalances.push(balance.pro);
       });
 
       // Calculate events over time (last 5 days)
@@ -188,13 +194,16 @@ async function handleRequest(request) {
         startTime: START_TIME,
         endTime: END_TIME,
         colliderDistribution: {
-          value1: 0 * Math.random(),
-          value2: 0 * Math.random(),
+          u: 0 * Math.random(),
+          s: 0 * Math.random(),
         },
         totalDistribution: {
-          value1: totalBaryonTokens,
-          value2: totalPhotonTokens,
-          value3: photonBalances,
+          u: totalBaryonTokens,
+          s: totalPhotonTokens,
+          baryonBags: baryonBalances,
+          photonBags: photonBalances,
+          antiBags: antiBalances,
+          proBags: proBalances,
         },
         emissionsData: {
           total: totalBaryonTokens + totalPhotonTokens,
@@ -294,10 +303,10 @@ async function handleRequest(request) {
         };
       }
 
-      accountBalances[wallet].anti += Number(antiTokens);
-      accountBalances[wallet].pro += Number(proTokens);
-      accountBalances[wallet].baryon += Number(baryonTokens);
-      accountBalances[wallet].photon += Number(photonTokens);
+      accountBalances[wallet].anti = antiTokens;
+      accountBalances[wallet].pro = proTokens;
+      accountBalances[wallet].baryon = baryonTokens;
+      accountBalances[wallet].photon = photonTokens;
 
       await KV.put(accountBalancesKey, JSON.stringify(accountBalances));
 
@@ -361,10 +370,10 @@ async function handleRequest(request) {
         };
       }
 
-      accountBalances[wallet].anti -= Number(antiTokens);
-      accountBalances[wallet].pro -= Number(proTokens);
-      accountBalances[wallet].baryon -= Number(baryonTokens);
-      accountBalances[wallet].photon -= Number(photonTokens);
+      accountBalances[wallet].anti = antiTokens;
+      accountBalances[wallet].pro = proTokens;
+      accountBalances[wallet].baryon = baryonTokens;
+      accountBalances[wallet].photon = photonTokens;
 
       await KV.put(accountBalancesKey, JSON.stringify(accountBalances));
 
