@@ -93,11 +93,13 @@ async function handleRequest(request) {
       let totalPhotonTokens = 0;
       let baryonBalances = [];
       let photonBalances = [];
-      Object.values(accountBalances).forEach((balance) => {
+      let addresses = [];
+      Object.entries(accountBalances).forEach(([wallet, balance]) => {
         totalBaryonTokens += balance.baryon;
         totalPhotonTokens += balance.photon;
         baryonBalances.push(balance.baryon);
         photonBalances.push(balance.photon);
+        addresses.push(wallet);
       });
 
       // Calculate total tokens
@@ -204,6 +206,7 @@ async function handleRequest(request) {
           photonBags: photonBalances,
           antiBags: antiBalances,
           proBags: proBalances,
+          wallets: addresses,
         },
         emissionsData: {
           total: totalBaryonTokens + totalPhotonTokens,
