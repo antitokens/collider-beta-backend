@@ -1,5 +1,5 @@
 # wrangler.toml
-name = "collider-beta-backend"
+name = "collider-alpha-backend"
 compatibility_date = "2024-12-04"
 
 [env]
