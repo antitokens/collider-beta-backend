@@ -4,6 +4,7 @@ import { Buffer } from "buffer";
 
 const endpoint =
   "https://greatest-smart-tent.solana-mainnet.quiknode.pro/c61afb9af2756c92f1dc812ac2a5b8b68c0602ff";
+const ORIGIN = "https://predict.antitoken.pro";
 const ANTI_TOKEN_MINT = "HB8KrN7Bb3iLWUPsozp67kS4gxtbA4W5QJX4wKPvpump";
 const PRO_TOKEN_MINT = "CWFa2nxUMf5d1WwKtG9FS9kjUKGwKXWSjH8hFdWspump";
 const KV = Antitoken_Collider_Beta;
@@ -406,7 +407,7 @@ async function handleRequest(request) {
 
 function createCorsResponse(body, init = {}) {
   const headers = new Headers(init.headers || {});
-  headers.set("Access-Control-Allow-Origin", "*"); // Adjust origin if needed
+  headers.set("Access-Control-Allow-Origin", ORIGIN);
   headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   headers.set("Access-Control-Allow-Headers", "Content-Type");
   headers.set("Content-Type", "application/json");
@@ -418,7 +419,7 @@ function createCorsResponse(body, init = {}) {
 
 function handleCorsPreflight() {
   const headers = new Headers();
-  headers.set("Access-Control-Allow-Origin", "*"); // Adjust origin if needed
+  headers.set("Access-Control-Allow-Origin", ORIGIN);
   headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   headers.set("Access-Control-Allow-Headers", "Content-Type");
   headers.set("Access-Control-Max-Age", "86400"); // Cache for 1 day
