@@ -7,6 +7,6 @@ account_id = "892973ecf5177f94c0bc003d89f498b6"
 workers_dev = true
 
 [[kv_namespaces]]
-binding = "Antitoken_Collider_Alpha"
-id = "e23bff096fdb4533b40c622f926ba41c"
-preview_id = "e23bff096fdb4533b40c622f926ba41c"
+binding = "Antitoken_Collider_Beta"
+id = "f8feb99c63a74cefab521689b0766a94"
+preview_id = "f8feb99c63a74cefab521689b0766a94"
