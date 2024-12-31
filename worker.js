@@ -5,7 +5,7 @@ import { Buffer } from "buffer";
 const endpoint =
   "https://greatest-smart-tent.solana-mainnet.quiknode.pro/c61afb9af2756c92f1dc812ac2a5b8b68c0602ff";
 const ORIGIN =
-  process.env.NODE_ENV === "development"
+  typeof globalThis.Wrangler === "undefined"
     ? "http://localhost:3000"
     : "https://app.antitoken.pro";
 const ANTI_TOKEN_MINT = "HB8KrN7Bb3iLWUPsozp67kS4gxtbA4W5QJX4wKPvpump";
