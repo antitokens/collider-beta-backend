@@ -1,7 +1,7 @@
 {
-  "name": "collider-beta-backend",
+  "name": "collider-alpha-backend",
   "version": "0.0.0",
-  "description": "A Cloudflare Workers KV for Collider-beta.",
+  "description": "A Cloudflare Workers KV for Collider-alpha.",
   "main": "worker.js",
   "scripts": {
     "dev": "npx wrangler dev --local worker.js",
