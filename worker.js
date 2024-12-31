@@ -14,6 +14,11 @@ const KV = Antitoken_Collider_Alpha;
 const START_TIME = "2024-12-25T18:30:00Z";
 const END_TIME = "2025-01-01T18:30:00Z";
 
+const duration =
+  Math.round(
+    (new Date(END_TIME) - new Date(START_TIME)) / (1000 * 60 * 60 * 24)
+  ) + 3;
+
 addEventListener("fetch", (event) => {
   event.respondWith(handleRequest(event.request));
 });
@@ -118,10 +123,10 @@ async function handleRequest(request) {
         proBalances.push(balance.pro);
       });
 
-      // Calculate events over time (last 5 days)
-      const dates = Array.from({ length: 5 }, (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
+      // Calculate events over time (last N days)
+      const dates = Array.from({ length: duration }, (_, i) => {
+        const date = new Date(END_TIME);
+        date.setDate(date.getDate() - i + 1);
         return date.toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
@@ -161,10 +166,30 @@ async function handleRequest(request) {
       }
 
       // Calculate token ranges
-      const tokenRangesPro = { "0-100k": 0, "100k-1m": 0, "1-10m": 0 };
-      const tokenRangesAnti = { "0-100k": 0, "100k-1m": 0, "1-10m": 0 };
-      const tokenRangesPhoton = { "0-100k": 0, "100k-1m": 0, "1-10m": 0 };
-      const tokenRangesBaryon = { "0-100k": 0, "100k-1m": 0, "1-10m": 0 };
+      const tokenRangesPro = {
+        "0-100k": 0,
+        "100k-1m": 0,
+        "1-10m": 0,
+        "10-100m": 0,
+      };
+      const tokenRangesAnti = {
+        "0-100k": 0,
+        "100k-1m": 0,
+        "1-10m": 0,
+        "10-100m": 0,
+      };
+      const tokenRangesPhoton = {
+        "0-100k": 0,
+        "100k-1m": 0,
+        "1-10m": 0,
+        "10-100m": 0,
+      };
+      const tokenRangesBaryon = {
+        "0-100k": 0,
+        "100k-1m": 0,
+        "1-10m": 0,
+        "10-100m": 0,
+      };
 
       Object.values(accountBalances).forEach((balance) => {
         // Pro token ranges
@@ -172,28 +197,36 @@ async function handleRequest(request) {
           tokenRangesPro["0-100k"]++;
         else if (balance.pro > 100000 && balance.pro <= 1000000)
           tokenRangesPro["100k-1m"]++;
-        else if (balance.pro > 1000000) tokenRangesPro["1-10m"]++;
+        else if (balance.pro > 1000000 && balance.pro <= 10000000)
+          tokenRangesPro["1-10m"]++;
+        else if (balance.pro > 10000000) tokenRangesPro["10-100m"]++;
 
         // Anti token ranges
         if (balance.anti > 0 && balance.anti <= 100000)
           tokenRangesAnti["0-100k"]++;
         else if (balance.anti > 100000 && balance.anti <= 1000000)
           tokenRangesAnti["100k-1m"]++;
-        else if (balance.anti > 1000000) tokenRangesAnti["1-10m"]++;
+        else if (balance.anti > 1000000 && balance.anti <= 10000000)
+          tokenRangesAnti["1-10m"]++;
+        else if (balance.anti > 10000000) tokenRangesAnti["10-100m"]++;
 
         // Photon token ranges
         if (balance.photon > 0 && balance.photon <= 100000)
           tokenRangesPhoton["0-100k"]++;
         else if (balance.photon > 100000 && balance.photon <= 1000000)
           tokenRangesPhoton["100k-1m"]++;
-        else if (balance.photon > 1000000) tokenRangesPhoton["1-10m"]++;
+        else if (balance.photon > 1000000 && balance.photon <= 10000000)
+          tokenRangesPhoton["1-10m"]++;
+        else if (balance.photon > 10000000) tokenRangesPhoton["10-100m"]++;
 
         // Baryon token ranges
         if (balance.baryon > 0 && balance.baryon <= 100000)
           tokenRangesBaryon["0-100k"]++;
         else if (balance.baryon > 100000 && balance.baryon <= 1000000)
           tokenRangesBaryon["100k-1m"]++;
-        else if (balance.baryon > 1000000) tokenRangesBaryon["1-10m"]++;
+        else if (balance.baryon > 1000000 && balance.baryon <= 10000000)
+          tokenRangesBaryon["1-10m"]++;
+        else if (balance.baryon > 10000000) tokenRangesBaryon["10-100m"]++;
       });
 
       const metadata = {
