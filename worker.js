@@ -5,14 +5,14 @@ import { Buffer } from "buffer";
 const endpoint =
   "https://greatest-smart-tent.solana-mainnet.quiknode.pro/c61afb9af2756c92f1dc812ac2a5b8b68c0602ff";
 const ORIGIN =
-  process.env.NODE_ENV === "development"
+  typeof globalThis.Wrangler === "undefined"
     ? "http://localhost:3000"
     : "https://stage.antitoken.pro";
 const ANTI_TOKEN_MINT = "HB8KrN7Bb3iLWUPsozp67kS4gxtbA4W5QJX4wKPvpump";
 const PRO_TOKEN_MINT = "CWFa2nxUMf5d1WwKtG9FS9kjUKGwKXWSjH8hFdWspump";
 const KV = Antitoken_Collider_Beta;
 const START_TIME = "2024-12-10T07:30:00Z";
-const END_TIME = "2024-12-31T09:30:00Z";
+const END_TIME = "2025-01-05T09:30:00Z";
 
 addEventListener("fetch", (event) => {
   event.respondWith(handleRequest(event.request));
