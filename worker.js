@@ -125,6 +125,7 @@ async function handleRequest(request) {
         const date = new Date(END_TIME);
         date.setDate(date.getDate() - i + 1);
         return date.toLocaleDateString("en-US", {
+          year: "numeric",
           month: "short",
           day: "numeric",
         });
@@ -135,6 +136,7 @@ async function handleRequest(request) {
         const date = new Date(END_TIME);
         date.setDate(date.getDate() - i + 1);
         return date.toLocaleDateString("en-US", {
+          year: "numeric",
           month: "short",
           day: "numeric",
         });
@@ -165,7 +167,7 @@ async function handleRequest(request) {
               if (event && event.timestamp) {
                 const eventDate = new Date(event.timestamp).toLocaleDateString(
                   "en-US",
-                  { month: "short", day: "numeric" }
+                  { year: "numeric", month: "short", day: "numeric" }
                 );
 
                 if (eventsByDay[eventDate]) {
