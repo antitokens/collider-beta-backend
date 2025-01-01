@@ -4,7 +4,7 @@ import { Buffer } from "buffer";
 
 const endpoint =
   "https://greatest-smart-tent.solana-mainnet.quiknode.pro/c61afb9af2756c92f1dc812ac2a5b8b68c0602ff";
-const ORIGIN = "https://stage.antitoken.pro";
+const ORIGIN = "https://stage.antitoken.pro"; // "http://localhost:3000" || "https://stage.antitoken.pro"
 const ANTI_TOKEN_MINT = "HB8KrN7Bb3iLWUPsozp67kS4gxtbA4W5QJX4wKPvpump";
 const PRO_TOKEN_MINT = "CWFa2nxUMf5d1WwKtG9FS9kjUKGwKXWSjH8hFdWspump";
 const KV = Antitoken_Collider_Beta;
@@ -125,6 +125,7 @@ async function handleRequest(request) {
         const date = new Date(END_TIME);
         date.setDate(date.getDate() - i + 1);
         return date.toLocaleDateString("en-US", {
+          year: "numeric",
           month: "short",
           day: "numeric",
         });
@@ -135,6 +136,7 @@ async function handleRequest(request) {
         const date = new Date(END_TIME);
         date.setDate(date.getDate() - i + 1);
         return date.toLocaleDateString("en-US", {
+          year: "numeric",
           month: "short",
           day: "numeric",
         });
@@ -165,7 +167,7 @@ async function handleRequest(request) {
               if (event && event.timestamp) {
                 const eventDate = new Date(event.timestamp).toLocaleDateString(
                   "en-US",
-                  { month: "short", day: "numeric" }
+                  { year: "numeric", month: "short", day: "numeric" }
                 );
 
                 if (eventsByDay[eventDate]) {
