@@ -4,12 +4,12 @@ import { Buffer } from "buffer";
 
 const endpoint =
   "https://greatest-smart-tent.solana-mainnet.quiknode.pro/c61afb9af2756c92f1dc812ac2a5b8b68c0602ff";
-const ORIGIN = "http://localhost:3000";
+const ORIGIN = "https://stage.antitoken.pro";
 const ANTI_TOKEN_MINT = "HB8KrN7Bb3iLWUPsozp67kS4gxtbA4W5QJX4wKPvpump";
 const PRO_TOKEN_MINT = "CWFa2nxUMf5d1WwKtG9FS9kjUKGwKXWSjH8hFdWspump";
 const KV = Antitoken_Collider_Beta;
-const START_TIME = "2024-12-24T07:30:00Z";
-const END_TIME = "2024-12-31T09:30:00Z";
+const START_TIME = "2024-12-30T07:30:00Z";
+const END_TIME = "2025-01-02T09:30:00Z";
 
 const duration =
   Math.round(
@@ -132,12 +132,19 @@ async function handleRequest(request) {
 
       // Get all event records and bin them by date
       const eventsByDay = {};
+      const eventsOverDays = {};
       dates.forEach((date) => {
         eventsByDay[date] = { pro: 0, anti: 0, baryon: 0, photon: 0 };
+        eventsOverDays[date] = { pro: 0, anti: 0, baryon: 0, photon: 0 };
       });
 
       // Iterate through all events in KV
       const allEvents = await KV.list();
+      let cumulativePro = 0;
+      let cumulativeAnti = 0;
+      let cumulativeBaryon = 0;
+      let cumulativePhoton = 0;
+
       for (const key of allEvents.keys) {
         if (key.name !== "account_balances") {
           const _key = await KV.get(key.name);
@@ -151,10 +158,23 @@ async function handleRequest(request) {
                 );
 
                 if (eventsByDay[eventDate]) {
+                  // Daily totals
                   eventsByDay[eventDate].anti += Number(event.anti) || 0;
                   eventsByDay[eventDate].pro += Number(event.pro) || 0;
                   eventsByDay[eventDate].baryon += Number(event.baryon) || 0;
                   eventsByDay[eventDate].photon += Number(event.photon) || 0;
+
+                  // Update running totals
+                  cumulativePro += Number(event.pro) || 0;
+                  cumulativeAnti += Number(event.anti) || 0;
+                  cumulativeBaryon += Number(event.baryon) || 0;
+                  cumulativePhoton += Number(event.photon) || 0;
+
+                  // Store cumulative totals for this date
+                  eventsOverDays[eventDate].pro = cumulativePro;
+                  eventsOverDays[eventDate].anti = cumulativeAnti;
+                  eventsOverDays[eventDate].baryon = cumulativeBaryon;
+                  eventsOverDays[eventDate].photon = cumulativePhoton;
                 }
               }
             });
@@ -226,20 +246,23 @@ async function handleRequest(request) {
         else if (balance.baryon > 10000000) tokenRangesBaryon["10-100m"]++;
       });
 
+      // Metadata object
       const metadata = {
         startTime: START_TIME,
         endTime: END_TIME,
         colliderDistribution: {
-          u: 0 * Math.random(),
-          s: 0 * Math.random(),
+          u: 0,
+          s: 0,
         },
         totalDistribution: {
           u: totalBaryonTokens,
           s: totalPhotonTokens,
-          baryonBags: baryonBalances,
-          photonBags: photonBalances,
-          antiBags: antiBalances,
-          proBags: proBalances,
+          bags: {
+            pro: proBalances,
+            anti: antiBalances,
+            photon: photonBalances,
+            baryon: baryonBalances,
+          },
           wallets: addresses,
         },
         emissionsData: {
@@ -260,14 +283,24 @@ async function handleRequest(request) {
         },
         eventsOverTime: {
           timestamps: dates,
-          proEvents: dates.map((date) => eventsByDay[date].pro),
-          antiEvents: dates.map((date) => eventsByDay[date].anti),
-          photonEvents: dates.map((date) => eventsByDay[date].photon),
-          baryonEvents: dates.map((date) => eventsByDay[date].baryon),
-          tokenRangesPro,
-          tokenRangesAnti,
-          tokenRangesPhoton,
-          tokenRangesBaryon,
+          events: {
+            pro: dates.map((date) => eventsByDay[date].pro),
+            anti: dates.map((date) => eventsByDay[date].anti),
+            photon: dates.map((date) => eventsByDay[date].photon),
+            baryon: dates.map((date) => eventsByDay[date].baryon),
+          },
+          ranges: {
+            pro: tokenRangesPro,
+            anti: tokenRangesAnti,
+            photon: tokenRangesPhoton,
+            baryon: tokenRangesBaryon,
+          },
+          cummulative: {
+            pro: dates.map((date) => eventsOverDays[date].pro),
+            anti: dates.map((date) => eventsOverDays[date].anti),
+            photon: dates.map((date) => eventsOverDays[date].photon),
+            baryon: dates.map((date) => eventsOverDays[date].baryon),
+          },
         },
       };
 
