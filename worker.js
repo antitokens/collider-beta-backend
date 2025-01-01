@@ -120,7 +120,7 @@ async function handleRequest(request) {
         proBalances.push(balance.pro);
       });
 
-      // Calculate events over time (last N days)
+      // Calculate events over time (last N +/- 1 days)
       const dates = Array.from({ length: duration }, (_, i) => {
         const date = new Date(END_TIME);
         date.setDate(date.getDate() - i + 1);
@@ -130,7 +130,16 @@ async function handleRequest(request) {
         });
       }).reverse();
 
-      // Get all event records and bin them by date
+      // Calculate events over time (last N days)
+      const datesStrict = Array.from({ length: duration }, (_, i) => {
+        const date = new Date(END_TIME);
+        date.setDate(date.getDate() - i + 1);
+        return date.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+      }).reverse();
+
       // Get all event records and bin them by date
       const eventsByDay = {};
       const eventsOverDays = {};
@@ -172,7 +181,7 @@ async function handleRequest(request) {
       }
 
       // Second pass: Calculate cumulative totals for all dates
-      dates.forEach((date) => {
+      datesStrict.forEach((date) => {
         cumulativePro += eventsByDay[date].pro;
         cumulativeAnti += eventsByDay[date].anti;
         cumulativeBaryon += eventsByDay[date].baryon;
@@ -300,6 +309,7 @@ async function handleRequest(request) {
             baryon: tokenRangesBaryon,
           },
           cummulative: {
+            timestamps: datesStrict,
             pro: dates.map((date) => eventsOverDays[date].pro),
             anti: dates.map((date) => eventsOverDays[date].anti),
             photon: dates.map((date) => eventsOverDays[date].photon),
