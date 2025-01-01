@@ -4,7 +4,7 @@ import { Buffer } from "buffer";
 
 const endpoint =
   "https://greatest-smart-tent.solana-mainnet.quiknode.pro/c61afb9af2756c92f1dc812ac2a5b8b68c0602ff";
-const ORIGIN = "https://stage.antitoken.pro";
+const ORIGIN = "http://localhost:3000";
 const ANTI_TOKEN_MINT = "HB8KrN7Bb3iLWUPsozp67kS4gxtbA4W5QJX4wKPvpump";
 const PRO_TOKEN_MINT = "CWFa2nxUMf5d1WwKtG9FS9kjUKGwKXWSjH8hFdWspump";
 const KV = Antitoken_Collider_Beta;
@@ -145,6 +145,7 @@ async function handleRequest(request) {
       let cumulativeBaryon = 0;
       let cumulativePhoton = 0;
 
+      // First pass: Calculate daily totals
       for (const key of allEvents.keys) {
         if (key.name !== "account_balances") {
           const _key = await KV.get(key.name);
@@ -158,29 +159,31 @@ async function handleRequest(request) {
                 );
 
                 if (eventsByDay[eventDate]) {
-                  // Daily totals
                   eventsByDay[eventDate].anti += Number(event.anti) || 0;
                   eventsByDay[eventDate].pro += Number(event.pro) || 0;
                   eventsByDay[eventDate].baryon += Number(event.baryon) || 0;
                   eventsByDay[eventDate].photon += Number(event.photon) || 0;
-
-                  // Update running totals
-                  cumulativePro += Number(event.pro) || 0;
-                  cumulativeAnti += Number(event.anti) || 0;
-                  cumulativeBaryon += Number(event.baryon) || 0;
-                  cumulativePhoton += Number(event.photon) || 0;
-
-                  // Store cumulative totals for this date
-                  eventsOverDays[eventDate].pro = cumulativePro;
-                  eventsOverDays[eventDate].anti = cumulativeAnti;
-                  eventsOverDays[eventDate].baryon = cumulativeBaryon;
-                  eventsOverDays[eventDate].photon = cumulativePhoton;
                 }
               }
             });
           }
         }
       }
+
+      // Second pass: Calculate cumulative totals for all dates
+      dates.forEach((date) => {
+        cumulativePro += eventsByDay[date].pro;
+        cumulativeAnti += eventsByDay[date].anti;
+        cumulativeBaryon += eventsByDay[date].baryon;
+        cumulativePhoton += eventsByDay[date].photon;
+
+        eventsOverDays[date] = {
+          pro: cumulativePro,
+          anti: cumulativeAnti,
+          baryon: cumulativeBaryon,
+          photon: cumulativePhoton,
+        };
+      });
 
       // Calculate token ranges
       const tokenRangesPro = {
