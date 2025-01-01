@@ -8,8 +8,8 @@ const ORIGIN = "https://stage.antitoken.pro"; // "http://localhost:3000" || "htt
 const ANTI_TOKEN_MINT = "HB8KrN7Bb3iLWUPsozp67kS4gxtbA4W5QJX4wKPvpump";
 const PRO_TOKEN_MINT = "CWFa2nxUMf5d1WwKtG9FS9kjUKGwKXWSjH8hFdWspump";
 const KV = Antitoken_Collider_Beta;
-const START_TIME = "2024-12-25T07:30:00Z";
-const END_TIME = "2025-01-02T09:30:00Z";
+const START_TIME = "2024-12-23T00:00:00Z";
+const END_TIME = "2025-01-03T00:00:00Z";
 
 const duration =
   Math.round(
