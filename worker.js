@@ -131,6 +131,7 @@ async function handleRequest(request) {
       }).reverse();
 
       // Get all event records and bin them by date
+      // Get all event records and bin them by date
       const eventsByDay = {};
       const eventsOverDays = {};
       dates.forEach((date) => {
@@ -145,6 +146,7 @@ async function handleRequest(request) {
       let cumulativeBaryon = 0;
       let cumulativePhoton = 0;
 
+      // First pass: Calculate daily totals
       for (const key of allEvents.keys) {
         if (key.name !== "account_balances") {
           const _key = await KV.get(key.name);
@@ -158,29 +160,31 @@ async function handleRequest(request) {
                 );
 
                 if (eventsByDay[eventDate]) {
-                  // Daily totals
                   eventsByDay[eventDate].anti += Number(event.anti) || 0;
                   eventsByDay[eventDate].pro += Number(event.pro) || 0;
                   eventsByDay[eventDate].baryon += Number(event.baryon) || 0;
                   eventsByDay[eventDate].photon += Number(event.photon) || 0;
-
-                  // Update running totals
-                  cumulativePro += Number(event.pro) || 0;
-                  cumulativeAnti += Number(event.anti) || 0;
-                  cumulativeBaryon += Number(event.baryon) || 0;
-                  cumulativePhoton += Number(event.photon) || 0;
-
-                  // Store cumulative totals for this date
-                  eventsOverDays[eventDate].pro = cumulativePro;
-                  eventsOverDays[eventDate].anti = cumulativeAnti;
-                  eventsOverDays[eventDate].baryon = cumulativeBaryon;
-                  eventsOverDays[eventDate].photon = cumulativePhoton;
                 }
               }
             });
           }
         }
       }
+
+      // Second pass: Calculate cumulative totals for all dates
+      dates.forEach((date) => {
+        cumulativePro += eventsByDay[date].pro;
+        cumulativeAnti += eventsByDay[date].anti;
+        cumulativeBaryon += eventsByDay[date].baryon;
+        cumulativePhoton += eventsByDay[date].photon;
+
+        eventsOverDays[date] = {
+          pro: cumulativePro,
+          anti: cumulativeAnti,
+          baryon: cumulativeBaryon,
+          photon: cumulativePhoton,
+        };
+      });
 
       // Calculate token ranges
       const tokenRangesPro = {
