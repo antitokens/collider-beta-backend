@@ -9,7 +9,7 @@ const ANTI_TOKEN_MINT = "EWkvvNnLasHCBpeDbitzx9pC8PMX4QSdnMPfxGsFpump";
 const PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump";
 const KV = Antitoken_Collider_Beta;
 const START_TIME = "2025-01-03T00:00:00Z";
-const END_TIME = "2025-01-06T00:00:00Z";
+const END_TIME = "2025-01-04T14:15:39.467Z";
 
 const duration =
   Math.round(
@@ -169,7 +169,7 @@ async function handleRequest(request) {
             const events = JSON.parse(_key);
             Object.values(events).forEach((event) => {
               if (event && event.timestamp) {
-                const time = new Date(event.timestamp) > endTime;
+                const time = new Date(event.timestamp) < endTime;
                 if (time) return;
                 const eventDate = new Date(event.timestamp).toLocaleDateString(
                   "en-US",
@@ -274,6 +274,10 @@ async function handleRequest(request) {
         colliderDistribution: {
           u: 0,
           s: 0,
+          range: [],
+          distribution: [],
+          short: [],
+          curve: [],
         },
         totalDistribution: {
           u: totalBaryonTokens,
@@ -328,8 +332,8 @@ async function handleRequest(request) {
 
       return createCorsResponse(JSON.stringify(metadata), { status: 200 });
     } catch (error) {
-      console.error("ERROR_GENERATING_HISTORY:", error);
-      return createCorsResponse("Error generating history", { status: 500 });
+      console.error("ERROR_GENERATING_CLAIMS:", error);
+      return createCorsResponse("Error generating claims", { status: 500 });
     }
   }
 
@@ -574,8 +578,8 @@ async function handleRequest(request) {
 
       return createCorsResponse(JSON.stringify(metadata), { status: 200 });
     } catch (error) {
-      console.error("ERROR_GENERATING_METADATA:", error);
-      return createCorsResponse("Error generating metadata", { status: 500 });
+      console.error("ERROR_GENERATING_BALANCES:", error);
+      return createCorsResponse("Error generating balances", { status: 500 });
     }
   }
 
