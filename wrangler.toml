@@ -10,3 +10,6 @@ workers_dev = true
 binding = "Antitoken_Collider_Beta"
 id = "e0fc61a0f9224afa8f01fd3f38b119f9"
 preview_id = "e0fc61a0f9224afa8f01fd3f38b119f9"
+
+[vars]
+TZ = "UTC"

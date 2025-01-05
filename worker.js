@@ -1,20 +1,21 @@
 import { Connection, PublicKey } from "@solana/web3.js";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { Buffer } from "buffer";
 
 const endpoint =
   "https://greatest-smart-tent.solana-mainnet.quiknode.pro/c61afb9af2756c92f1dc812ac2a5b8b68c0602ff";
-const ORIGIN = "https://stage.antitoken.pro"; // "http://localhost:3000" || "https://stage.antitoken.pro"
+const ORIGIN = "http://localhost:3000"; // "http://localhost:3000" || "https://stage.antitoken.pro"
 const ANTI_TOKEN_MINT = "EWkvvNnLasHCBpeDbitzx9pC8PMX4QSdnMPfxGsFpump";
 const PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump";
 const KV = Antitoken_Collider_Beta;
-const START_TIME = "2025-01-06T00:00:00.000Z";
-const END_TIME = "2025-01-09T00:00:00.000Z";
+const START_TIME = "2025-01-05T05:30:00.000Z";
+const END_TIME = "2025-01-05T11:30:00.000Z";
 
-const duration =
-  Math.round(
-    (new Date(END_TIME) - new Date(START_TIME)) / (1000 * 60 * 60 * 24)
-  ) + 3;
+const startTime = new Date(START_TIME);
+const endTime = new Date(END_TIME);
+const timeDiffHours = (endTime - startTime) / (1000 * 60 * 60);
+const useHourly = timeDiffHours < 24;
+const duration = useHourly
+  ? Math.ceil(timeDiffHours) + 3
+  : Math.ceil((endTime - startTime) / (1000 * 60 * 60 * 24)) + 3;
 
 addEventListener("fetch", (event) => {
   event.respondWith(handleRequest(event.request));
@@ -42,44 +43,6 @@ async function getTokenSupply(tokenMintAddress) {
   }
 }
 
-// Get token holders helper
-async function getTokenHolders(tokenMintAddress) {
-  try {
-    const connection = new Connection(endpoint, "confirmed");
-    // Get all accounts that hold this token
-    const accounts = await connection.getProgramAccounts(TOKEN_PROGRAM_ID, {
-      filters: [
-        {
-          dataSize: 165, // Size of token account
-        },
-        {
-          memcmp: {
-            offset: 0,
-            bytes: tokenMintAddress,
-          },
-        },
-      ],
-    });
-
-    // Filter out accounts with zero balance
-    const activeAccounts = accounts.filter((account) => {
-      const data = Buffer.from(account.account.data);
-      const amount = data.readBigUInt64LE(64);
-      return amount > 0;
-    });
-
-    return {
-      totalHolders: activeAccounts.length,
-      holderAccounts: activeAccounts.map((account) =>
-        account.pubkey.toString()
-      ),
-    };
-  } catch (error) {
-    console.error("Error fetching token holders:", error);
-    throw error;
-  }
-}
-
 async function handleRequest(request) {
   const url = new URL(request.url);
   const path = url.pathname;
@@ -91,8 +54,6 @@ async function handleRequest(request) {
 
   if (request.method === "GET" && path === "/claims") {
     try {
-      const startTime = new Date(START_TIME);
-      const endTime = new Date(END_TIME);
       // Get all account claims
       const accountValues = JSON.parse(
         (await KV.get("account_claims")) || "{}"
@@ -124,29 +85,39 @@ async function handleRequest(request) {
         proBalances.push(balance.pro);
       });
 
-      // Calculate events over time (last N +/- 1 days)
+      // Calculate events over time (last N +/- 1 hours/days)
       const dates = Array.from({ length: duration }, (_, i) => {
         const date = new Date(END_TIME);
-        date.setDate(date.getDate() - i + 1);
+        if (useHourly) {
+          date.setHours(date.getHours() - i + 1);
+        } else {
+          date.setDate(date.getDate() - i + 1);
+        }
         return date.toLocaleDateString("en-US", {
           year: "numeric",
           month: "short",
           day: "numeric",
+          ...(useHourly && { hour: "numeric", hour12: true }),
         });
       }).reverse();
 
-      // Calculate events over time (last N days)
+      // Calculate events over time (last N hours/days)
       const datesStrict = Array.from({ length: duration }, (_, i) => {
         const date = new Date(END_TIME);
-        date.setDate(date.getDate() - i + 1);
+        if (useHourly) {
+          date.setHours(date.getHours() - i + 1);
+        } else {
+          date.setDate(date.getDate() - i + 1);
+        }
         return date.toLocaleDateString("en-US", {
           year: "numeric",
           month: "short",
           day: "numeric",
+          ...(useHourly && { hour: "numeric", hour12: true }),
         });
       }).reverse();
 
-      // Get all event records and bin them by date
+      // Get all event records and bin them by date/hour
       const eventsByDay = {};
       const eventsOverDays = {};
       dates.forEach((date) => {
@@ -161,7 +132,7 @@ async function handleRequest(request) {
       let cumulativeBaryon = 0;
       let cumulativePhoton = 0;
 
-      // First pass: Calculate daily totals
+      // First pass: Calculate hourly/daily totals
       for (const key of allEvents.keys) {
         if (key.name !== "account_balances" && key.name !== "account_claims") {
           const _key = await KV.get(key.name);
@@ -173,7 +144,12 @@ async function handleRequest(request) {
                 if (time) return;
                 const eventDate = new Date(event.timestamp).toLocaleDateString(
                   "en-US",
-                  { year: "numeric", month: "short", day: "numeric" }
+                  {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                    ...(useHourly && { hour: "numeric", hour12: true }),
+                  }
                 );
 
                 if (eventsByDay[eventDate]) {
@@ -339,8 +315,6 @@ async function handleRequest(request) {
 
   if (request.method === "GET" && path === "/balances") {
     try {
-      const startTime = new Date(START_TIME);
-      const endTime = new Date(END_TIME);
       // Get all account balances
       const accountValues = JSON.parse(
         (await KV.get("account_balances")) || "{}"
@@ -372,25 +346,35 @@ async function handleRequest(request) {
         proBalances.push(balance.pro);
       });
 
-      // Calculate events over time (last N +/- 1 days)
+      // Calculate events over time (last N +/- 1 hours/days)
       const dates = Array.from({ length: duration }, (_, i) => {
         const date = new Date(END_TIME);
-        date.setDate(date.getDate() - i + 1);
+        if (useHourly) {
+          date.setHours(date.getHours() - i + 1);
+        } else {
+          date.setDate(date.getDate() - i + 1);
+        }
         return date.toLocaleDateString("en-US", {
           year: "numeric",
           month: "short",
           day: "numeric",
+          ...(useHourly && { hour: "numeric", hour12: true }),
         });
       }).reverse();
 
-      // Calculate events over time (last N days)
+      // Calculate events over time (last N hours/days)
       const datesStrict = Array.from({ length: duration }, (_, i) => {
         const date = new Date(END_TIME);
-        date.setDate(date.getDate() - i + 1);
+        if (useHourly) {
+          date.setHours(date.getHours() - i + 1);
+        } else {
+          date.setDate(date.getDate() - i + 1);
+        }
         return date.toLocaleDateString("en-US", {
           year: "numeric",
           month: "short",
           day: "numeric",
+          ...(useHourly && { hour: "numeric", hour12: true }),
         });
       }).reverse();
 
@@ -423,7 +407,12 @@ async function handleRequest(request) {
                 if (time) return;
                 const eventDate = new Date(event.timestamp).toLocaleDateString(
                   "en-US",
-                  { year: "numeric", month: "short", day: "numeric" }
+                  {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                    ...(useHourly && { hour: "numeric", hour12: true }),
+                  }
                 );
 
                 if (eventsByDay[eventDate]) {
