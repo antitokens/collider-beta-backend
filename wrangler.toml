@@ -8,5 +8,5 @@ workers_dev = true
 
 [[kv_namespaces]]
 binding = "Antitoken_Collider_Alpha"
-id = "e23bff096fdb4533b40c622f926ba41c"
-preview_id = "e23bff096fdb4533b40c622f926ba41c"
+id = "27907d49fc1b4af2b2a976900317f87e"
+preview_id = "27907d49fc1b4af2b2a976900317f87e"
