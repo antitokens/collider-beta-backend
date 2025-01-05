@@ -8,8 +8,8 @@ const ORIGIN = "http://localhost:3000"; // "http://localhost:3000" || "https://s
 const ANTI_TOKEN_MINT = "EWkvvNnLasHCBpeDbitzx9pC8PMX4QSdnMPfxGsFpump";
 const PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump";
 const KV = Antitoken_Collider_Beta;
-const START_TIME = "2025-01-03T00:00:00Z";
-const END_TIME = "2025-01-04T14:15:39.467Z";
+const START_TIME = "2025-01-03T14:00:00Z";
+const END_TIME = "2025-01-04T17:32:03.906Z";
 
 const duration =
   Math.round(
