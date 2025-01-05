@@ -94,6 +94,7 @@ async function handleRequest(request) {
           date.setDate(date.getDate() - i + 1);
         }
         return date.toLocaleDateString("en-US", {
+          timeZone: "UTC",
           year: "numeric",
           month: "short",
           day: "numeric",
@@ -110,6 +111,7 @@ async function handleRequest(request) {
           date.setDate(date.getDate() - i + 1);
         }
         return date.toLocaleDateString("en-US", {
+          timeZone: "UTC",
           year: "numeric",
           month: "short",
           day: "numeric",
@@ -145,6 +147,7 @@ async function handleRequest(request) {
                 const eventDate = new Date(event.timestamp).toLocaleDateString(
                   "en-US",
                   {
+                    timeZone: "UTC",
                     year: "numeric",
                     month: "short",
                     day: "numeric",
@@ -355,6 +358,7 @@ async function handleRequest(request) {
           date.setDate(date.getDate() - i + 1);
         }
         return date.toLocaleDateString("en-US", {
+          timeZone: "UTC",
           year: "numeric",
           month: "short",
           day: "numeric",
@@ -371,6 +375,7 @@ async function handleRequest(request) {
           date.setDate(date.getDate() - i + 1);
         }
         return date.toLocaleDateString("en-US", {
+          timeZone: "UTC",
           year: "numeric",
           month: "short",
           day: "numeric",
@@ -408,6 +413,7 @@ async function handleRequest(request) {
                 const eventDate = new Date(event.timestamp).toLocaleDateString(
                   "en-US",
                   {
+                    timeZone: "UTC",
                     year: "numeric",
                     month: "short",
                     day: "numeric",
