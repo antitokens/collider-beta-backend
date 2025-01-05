@@ -1,6 +1,4 @@
 import { Connection, PublicKey } from "@solana/web3.js";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { Buffer } from "buffer";
 
 const endpoint =
   "https://greatest-smart-tent.solana-mainnet.quiknode.pro/c61afb9af2756c92f1dc812ac2a5b8b68c0602ff";
@@ -11,10 +9,13 @@ const KV = Antitoken_Collider_Alpha;
 const START_TIME = "2025-01-06T00:00:00Z";
 const END_TIME = "2025-01-09T00:00:00Z";
 
-const duration =
-  Math.round(
-    (new Date(END_TIME) - new Date(START_TIME)) / (1000 * 60 * 60 * 24)
-  ) + 3;
+const startTime = new Date(START_TIME);
+const endTime = new Date(END_TIME);
+const timeDiffHours = (endTime - startTime) / (1000 * 60 * 60);
+const useHourly = timeDiffHours < 24;
+const duration = useHourly
+  ? Math.ceil(timeDiffHours) + 3
+  : Math.ceil((endTime - startTime) / (1000 * 60 * 60 * 24)) + 3;
 
 addEventListener("fetch", (event) => {
   event.respondWith(handleRequest(event.request));
