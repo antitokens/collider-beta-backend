@@ -2,20 +2,47 @@ import { Connection, PublicKey } from "@solana/web3.js";
 
 const endpoint =
   "https://greatest-smart-tent.solana-mainnet.quiknode.pro/c61afb9af2756c92f1dc812ac2a5b8b68c0602ff";
-const ORIGIN = "http://localhost:3000"; // "http://localhost:3000" || "https://stage.antitoken.pro"
+const ORIGIN = "https://stage.antitoken.pro"; // "http://localhost:3000" || "https://stage.antitoken.pro"
 const ANTI_TOKEN_MINT = "EWkvvNnLasHCBpeDbitzx9pC8PMX4QSdnMPfxGsFpump";
 const PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump";
 const KV = Antitoken_Collider_Beta;
-const START_TIME = "2025-01-05T05:30:00.000Z";
-const END_TIME = "2025-01-05T11:30:00.000Z";
+const START_TIME = "2025-01-06T00:00:00.000Z";
+const END_TIME = "2025-01-09T00:00:00.000Z";
 
+// Calculate globals
 const startTime = new Date(START_TIME);
 const endTime = new Date(END_TIME);
 const timeDiffHours = (endTime - startTime) / (1000 * 60 * 60);
-const useHourly = timeDiffHours < 24;
-const duration = useHourly
-  ? Math.ceil(timeDiffHours) + 3
-  : Math.ceil((endTime - startTime) / (1000 * 60 * 60 * 24)) + 3;
+
+// Determine the binning strategy based on duration
+let binningStrategy;
+if (timeDiffHours <= 24) {
+  binningStrategy = "hourly";
+} else if (timeDiffHours <= 48) {
+  binningStrategy = "6-hour";
+} else if (timeDiffHours <= 72) {
+  binningStrategy = "12-hour";
+} else {
+  binningStrategy = "daily";
+}
+
+// Calculate duration based on binning strategy
+const duration = (() => {
+  switch (binningStrategy) {
+    case "hourly":
+      // Pad with 1 bin each to the left & right (+ 1)
+      return Math.ceil(timeDiffHours) + 3;
+    case "6-hour":
+      // Pad with 1 bin each to the left & right (+ 1)
+      return Math.ceil(timeDiffHours / 6) + 3;
+    case "12-hour":
+      // Pad with 1 bin each to the left & right (+ 1)
+      return Math.ceil(timeDiffHours / 12) + 3;
+    default:
+      // Pad with 1 bin each to the left & right (+ 1)
+      return Math.ceil((endTime - startTime) / (1000 * 60 * 60 * 24)) + 3;
+  }
+})();
 
 addEventListener("fetch", (event) => {
   event.respondWith(handleRequest(event.request));
@@ -85,37 +112,28 @@ async function handleRequest(request) {
         proBalances.push(balance.pro);
       });
 
-      // Calculate events over time (last N +/- 1 hours/days)
+      // Calculate events over time (last N +/- 1 hours/days/bins)
       const dates = Array.from({ length: duration }, (_, i) => {
         const date = new Date(END_TIME);
-        if (useHourly) {
-          date.setHours(date.getHours() - i + 1);
-        } else {
-          date.setDate(date.getDate() - i + 1);
+        switch (binningStrategy) {
+          case "hourly":
+            date.setHours(date.getHours() - i + 1);
+            break;
+          case "6-hour":
+            date.setHours(date.getHours() - i * 6 + 6);
+            break;
+          case "12-hour":
+            date.setHours(date.getHours() - i * 12 + 12);
+            break;
+          default:
+            date.setDate(date.getDate() - i + 1);
         }
         return date.toLocaleDateString("en-US", {
           timeZone: "UTC",
           year: "numeric",
           month: "short",
           day: "numeric",
-          ...(useHourly && { hour: "numeric", hour12: true }),
-        });
-      }).reverse();
-
-      // Calculate events over time (last N hours/days)
-      const datesStrict = Array.from({ length: duration }, (_, i) => {
-        const date = new Date(END_TIME);
-        if (useHourly) {
-          date.setHours(date.getHours() - i + 1);
-        } else {
-          date.setDate(date.getDate() - i + 1);
-        }
-        return date.toLocaleDateString("en-US", {
-          timeZone: "UTC",
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          ...(useHourly && { hour: "numeric", hour12: true }),
+          ...(binningStrategy !== "daily" && { hour: "numeric", hour12: true }),
         });
       }).reverse();
 
@@ -151,7 +169,10 @@ async function handleRequest(request) {
                     year: "numeric",
                     month: "short",
                     day: "numeric",
-                    ...(useHourly && { hour: "numeric", hour12: true }),
+                    ...(binningStrategy !== "daily" && {
+                      hour: "numeric",
+                      hour12: true,
+                    }),
                   }
                 );
 
@@ -168,7 +189,7 @@ async function handleRequest(request) {
       }
 
       // Second pass: Calculate cumulative totals for all dates
-      datesStrict.forEach((date) => {
+      dates.forEach((date) => {
         cumulativePro += eventsByDay[date].pro;
         cumulativeAnti += eventsByDay[date].anti;
         cumulativeBaryon += eventsByDay[date].baryon;
@@ -300,7 +321,7 @@ async function handleRequest(request) {
             baryon: tokenRangesBaryon,
           },
           cumulative: {
-            timestamps: datesStrict,
+            timestamps: dates,
             pro: dates.map((date) => eventsOverDays[date].pro),
             anti: dates.map((date) => eventsOverDays[date].anti),
             photon: dates.map((date) => eventsOverDays[date].photon),
@@ -349,37 +370,28 @@ async function handleRequest(request) {
         proBalances.push(balance.pro);
       });
 
-      // Calculate events over time (last N +/- 1 hours/days)
+      // Calculate events over time (last N +/- 1 hours/days/bins)
       const dates = Array.from({ length: duration }, (_, i) => {
         const date = new Date(END_TIME);
-        if (useHourly) {
-          date.setHours(date.getHours() - i + 1);
-        } else {
-          date.setDate(date.getDate() - i + 1);
+        switch (binningStrategy) {
+          case "hourly":
+            date.setHours(date.getHours() - i + 1);
+            break;
+          case "6-hour":
+            date.setHours(date.getHours() - i * 6 + 6);
+            break;
+          case "12-hour":
+            date.setHours(date.getHours() - i * 12 + 12);
+            break;
+          default:
+            date.setDate(date.getDate() - i + 1);
         }
         return date.toLocaleDateString("en-US", {
           timeZone: "UTC",
           year: "numeric",
           month: "short",
           day: "numeric",
-          ...(useHourly && { hour: "numeric", hour12: true }),
-        });
-      }).reverse();
-
-      // Calculate events over time (last N hours/days)
-      const datesStrict = Array.from({ length: duration }, (_, i) => {
-        const date = new Date(END_TIME);
-        if (useHourly) {
-          date.setHours(date.getHours() - i + 1);
-        } else {
-          date.setDate(date.getDate() - i + 1);
-        }
-        return date.toLocaleDateString("en-US", {
-          timeZone: "UTC",
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          ...(useHourly && { hour: "numeric", hour12: true }),
+          ...(binningStrategy !== "daily" && { hour: "numeric", hour12: true }),
         });
       }).reverse();
 
@@ -417,7 +429,10 @@ async function handleRequest(request) {
                     year: "numeric",
                     month: "short",
                     day: "numeric",
-                    ...(useHourly && { hour: "numeric", hour12: true }),
+                    ...(binningStrategy !== "daily" && {
+                      hour: "numeric",
+                      hour12: true,
+                    }),
                   }
                 );
 
@@ -434,7 +449,7 @@ async function handleRequest(request) {
       }
 
       // Second pass: Calculate cumulative totals for all dates
-      datesStrict.forEach((date) => {
+      dates.forEach((date) => {
         cumulativePro += eventsByDay[date].pro;
         cumulativeAnti += eventsByDay[date].anti;
         cumulativeBaryon += eventsByDay[date].baryon;
@@ -562,7 +577,7 @@ async function handleRequest(request) {
             baryon: tokenRangesBaryon,
           },
           cumulative: {
-            timestamps: datesStrict,
+            timestamps: dates,
             pro: dates.map((date) => eventsOverDays[date].pro),
             anti: dates.map((date) => eventsOverDays[date].anti),
             photon: dates.map((date) => eventsOverDays[date].photon),
