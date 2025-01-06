@@ -1,5 +1,5 @@
 # wrangler.toml
-name = "collider-beta-backend"
+name = "collider-alpha-backend"
 compatibility_date = "2024-12-04"
 
 [env]
@@ -7,9 +7,9 @@ account_id = "892973ecf5177f94c0bc003d89f498b6"
 workers_dev = true
 
 [[kv_namespaces]]
-binding = "Antitoken_Collider_Beta"
-id = "e0fc61a0f9224afa8f01fd3f38b119f9"
-preview_id = "e0fc61a0f9224afa8f01fd3f38b119f9"
+binding = "Antitoken_Collider_Alpha"
+id = "27907d49fc1b4af2b2a976900317f87e"
+preview_id = "27907d49fc1b4af2b2a976900317f87e"
 
 [vars]
 TZ = "UTC"
