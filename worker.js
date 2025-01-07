@@ -1,6 +1,6 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 
-// Meta
+// Set meta
 const endpoint =
   "https://greatest-smart-tent.solana-mainnet.quiknode.pro/c61afb9af2756c92f1dc812ac2a5b8b68c0602ff";
 const ORIGIN = "http://localhost:3000"; // "http://localhost:3000" || "https://stage.antitoken.pro"
@@ -10,7 +10,7 @@ const KV = Antitoken_Collider_Beta;
 
 // Set duration
 const START_TIME = "2025-01-07T00:00:00.000Z";
-const END_TIME = "2025-01-07T21:00:00.000Z";
+const END_TIME = "2025-01-10T00:00:00.000Z";
 
 // Calculate globals
 const startTime = new Date(START_TIME);
@@ -29,7 +29,7 @@ if (timeDiffHours <= 24) {
   binningStrategy = "daily";
 }
 
-// Calculate duration based on binning strategy
+// Calculate binning based on binning strategy
 const duration = (() => {
   switch (binningStrategy) {
     case "hourly":
@@ -216,17 +216,17 @@ async function handleRequest(request) {
                 if (time) return;
                 const eventBin = findBinForTimestamp(event.timestamp, bins);
                 if (eventsByBin[eventBin]) {
-                  eventsByBin[eventBin].anti += Number(event.anti) || 0;
-                  eventsByBin[eventBin].pro += Number(event.pro) || 0;
-                  eventsByBin[eventBin].baryon += Number(event.baryon) || 0;
-                  eventsByBin[eventBin].photon += Number(event.photon) || 0;
+                  eventsByBin[eventBin].anti = Number(event.anti) || 0;
+                  eventsByBin[eventBin].pro = Number(event.pro) || 0;
+                  eventsByBin[eventBin].baryon = Number(event.baryon) || 0;
+                  eventsByBin[eventBin].photon = Number(event.photon) || 0;
                 }
               }
             });
           }
         }
       }
-
+      
       // Second pass: Calculate cumulative totals for all bins
       bins.forEach((bin) => {
         cumulativePro += eventsByBin[bin].pro;
@@ -448,13 +448,14 @@ async function handleRequest(request) {
       let cumulativeAnti = 0;
       let cumulativeBaryon = 0;
       let cumulativePhoton = 0;
-
+      
       // First pass: Calculate by-bin totals
       for (const key of allEvents.keys) {
         if (key.name !== "account_balances" && key.name !== "account_claims") {
           const _key = await KV.get(key.name);
           if (_key) {
             const events = JSON.parse(_key);
+            console.log(JSON.stringify(events))
             Object.values(events).forEach((event) => {
               if (event && event.timestamp) {
                 const time =
@@ -463,17 +464,18 @@ async function handleRequest(request) {
                 if (time) return;
                 const eventBin = findBinForTimestamp(event.timestamp, bins);
                 if (eventsByBin[eventBin]) {
-                  eventsByBin[eventBin].anti += Number(event.anti) || 0;
-                  eventsByBin[eventBin].pro += Number(event.pro) || 0;
-                  eventsByBin[eventBin].baryon += Number(event.baryon) || 0;
-                  eventsByBin[eventBin].photon += Number(event.photon) || 0;
+                  eventsByBin[eventBin].anti = Number(event.anti) || 0;
+                  eventsByBin[eventBin].pro = Number(event.pro) || 0;
+                  eventsByBin[eventBin].baryon = Number(event.baryon) || 0;
+                  eventsByBin[eventBin].photon = Number(event.photon) || 0;
                 }
               }
             });
           }
         }
       }
-
+      
+      console.log(JSON.stringify(eventsByBin));
       // Second pass: Calculate cumulative totals for all bins
       bins.forEach((bin) => {
         cumulativePro += eventsByBin[bin].pro;
