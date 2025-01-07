@@ -216,10 +216,10 @@ async function handleRequest(request) {
                 if (time) return;
                 const eventBin = findBinForTimestamp(event.timestamp, bins);
                 if (eventsByBin[eventBin]) {
-                  eventsByBin[eventBin].anti += Number(event.anti) || 0;
-                  eventsByBin[eventBin].pro += Number(event.pro) || 0;
-                  eventsByBin[eventBin].baryon += Number(event.baryon) || 0;
-                  eventsByBin[eventBin].photon += Number(event.photon) || 0;
+                  eventsByBin[eventBin].anti = Number(event.anti) || 0;
+                  eventsByBin[eventBin].pro = Number(event.pro) || 0;
+                  eventsByBin[eventBin].baryon = Number(event.baryon) || 0;
+                  eventsByBin[eventBin].photon = Number(event.photon) || 0;
                 }
               }
             });
@@ -463,10 +463,10 @@ async function handleRequest(request) {
                 if (time) return;
                 const eventBin = findBinForTimestamp(event.timestamp, bins);
                 if (eventsByBin[eventBin]) {
-                  eventsByBin[eventBin].anti += Number(event.anti) || 0;
-                  eventsByBin[eventBin].pro += Number(event.pro) || 0;
-                  eventsByBin[eventBin].baryon += Number(event.baryon) || 0;
-                  eventsByBin[eventBin].photon += Number(event.photon) || 0;
+                  eventsByBin[eventBin].anti = Number(event.anti) || 0;
+                  eventsByBin[eventBin].pro = Number(event.pro) || 0;
+                  eventsByBin[eventBin].baryon = Number(event.baryon) || 0;
+                  eventsByBin[eventBin].photon = Number(event.photon) || 0;
                 }
               }
             });
