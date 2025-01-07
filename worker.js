@@ -3,10 +3,10 @@ import { Connection, PublicKey } from "@solana/web3.js";
 // Set meta
 const endpoint =
   "https://greatest-smart-tent.solana-mainnet.quiknode.pro/c61afb9af2756c92f1dc812ac2a5b8b68c0602ff";
-const ORIGIN = "https://stage.antitoken.pro"; // "http://localhost:3000" || "https://stage.antitoken.pro"
+const ORIGIN = "https://app.antitoken.pro"; // "http://localhost:3000" || "https://stage.antitoken.pro"
 const ANTI_TOKEN_MINT = "EWkvvNnLasHCBpeDbitzx9pC8PMX4QSdnMPfxGsFpump";
 const PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump";
-const KV = Antitoken_Collider_Beta;
+const KV = Antitoken_Collider_Alpha;
 
 // Set duration
 const START_TIME = "2025-01-06T00:00:00.000Z";
