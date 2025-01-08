@@ -9,8 +9,8 @@ const PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump";
 const KV = Antitoken_Collider_Beta;
 
 // Set duration
-const START_TIME = "2025-01-07T00:00:00.000Z";
-const END_TIME = "2025-01-10T00:00:00.000Z";
+const START_TIME = "2025-01-05T12:00:00.000Z";
+const END_TIME = "2025-01-08T12:00:00.000Z";
 
 // Calculate globals
 const startTime = new Date(START_TIME);
@@ -231,7 +231,7 @@ async function handleRequest(request) {
             // Sum up all wallet contributions into bins
             walletContributions.forEach((event) => {
               if (!event || !event.timestamp) return;
-              const time = new Date(event.timestamp) > endTime;
+              const time = new Date(event.timestamp) < endTime;
               if (time) return;
               const eventBin = findBinForTimestamp(event.timestamp, bins);
               if (eventsByBin[eventBin]) {
