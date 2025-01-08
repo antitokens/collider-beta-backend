@@ -231,7 +231,7 @@ async function handleRequest(request) {
             // Sum up all wallet contributions into bins
             walletContributions.forEach((event) => {
               if (!event || !event.timestamp) return;
-              const time = new Date(event.timestamp) > endTime;
+              const time = new Date(event.timestamp) < endTime;
               if (time) return;
               const eventBin = findBinForTimestamp(event.timestamp, bins);
               if (eventsByBin[eventBin]) {
