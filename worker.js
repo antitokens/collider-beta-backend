@@ -9,8 +9,8 @@ const PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump";
 const KV = Antitoken_Collider_Beta;
 
 // Set duration
-const START_TIME = "2025-01-05T12:00:00.000Z";
-const END_TIME = "2025-01-08T12:00:00.000Z";
+const START_TIME = "2025-01-05T00:00:00.000Z";
+const END_TIME = "2025-01-09T00:00:00.000Z";
 
 // Calculate globals
 const startTime = new Date(START_TIME);
@@ -23,7 +23,7 @@ if (timeDiffHours <= 24) {
   binningStrategy = "hourly";
 } else if (timeDiffHours <= 48) {
   binningStrategy = "6-hour";
-} else if (timeDiffHours <= 72) {
+} else if (timeDiffHours <= 96) {
   binningStrategy = "12-hour";
 } else {
   binningStrategy = "daily";
