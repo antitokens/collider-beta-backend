@@ -29,7 +29,7 @@ if (timeDiffHours <= 24) {
   binningStrategy = "daily";
 }
 
-// Calculate duration based on binning strategy
+// Calculate binning based on binning strategy
 const duration = (() => {
   switch (binningStrategy) {
     case "hourly":
@@ -210,17 +210,35 @@ async function handleRequest(request) {
           const _key = await KV.get(key.name);
           if (_key) {
             const events = JSON.parse(_key);
-            Object.values(events).forEach((event) => {
-              if (event && event.timestamp) {
-                const time = new Date(event.timestamp) < endTime;
-                if (time) return;
-                const eventBin = findBinForTimestamp(event.timestamp, bins);
-                if (eventsByBin[eventBin]) {
-                  eventsByBin[eventBin].anti = Number(event.anti) || 0;
-                  eventsByBin[eventBin].pro = Number(event.pro) || 0;
-                  eventsByBin[eventBin].baryon = Number(event.baryon) || 0;
-                  eventsByBin[eventBin].photon = Number(event.photon) || 0;
-                }
+            // Get array of unique wallets
+            const uniqueWallets = [
+              ...new Set(
+                Object.values(events)
+                  .filter((event) => event && event.wallet)
+                  .map((event) => event.wallet)
+              ),
+            ];
+
+            // For each wallet, find their latest event
+            const walletContributions = uniqueWallets.map((wallet) => {
+              // Since events are chronologically indexed, find the last event for this wallet
+              const latestEvent = Object.values(events)
+                .filter((event) => event && event.wallet === wallet)
+                .pop(); // Gets last element since events are chronologically indexed
+              return latestEvent;
+            });
+
+            // Sum up all wallet contributions into bins
+            walletContributions.forEach((event) => {
+              if (!event || !event.timestamp) return;
+              const time = new Date(event.timestamp) > endTime;
+              if (time) return;
+              const eventBin = findBinForTimestamp(event.timestamp, bins);
+              if (eventsByBin[eventBin]) {
+                eventsByBin[eventBin].anti += Number(event.anti) || 0;
+                eventsByBin[eventBin].pro += Number(event.pro) || 0;
+                eventsByBin[eventBin].baryon += Number(event.baryon) || 0;
+                eventsByBin[eventBin].photon += Number(event.photon) || 0;
               }
             });
           }
@@ -233,7 +251,6 @@ async function handleRequest(request) {
         cumulativeAnti += eventsByBin[bin].anti;
         cumulativeBaryon += eventsByBin[bin].baryon;
         cumulativePhoton += eventsByBin[bin].photon;
-
         eventsOverBins[bin] = {
           pro: cumulativePro,
           anti: cumulativeAnti,
@@ -455,19 +472,37 @@ async function handleRequest(request) {
           const _key = await KV.get(key.name);
           if (_key) {
             const events = JSON.parse(_key);
-            Object.values(events).forEach((event) => {
-              if (event && event.timestamp) {
-                const time =
-                  new Date(event.timestamp) < startTime ||
-                  new Date(event.timestamp) > endTime;
-                if (time) return;
-                const eventBin = findBinForTimestamp(event.timestamp, bins);
-                if (eventsByBin[eventBin]) {
-                  eventsByBin[eventBin].anti = Number(event.anti) || 0;
-                  eventsByBin[eventBin].pro = Number(event.pro) || 0;
-                  eventsByBin[eventBin].baryon = Number(event.baryon) || 0;
-                  eventsByBin[eventBin].photon = Number(event.photon) || 0;
-                }
+            // Get array of unique wallets
+            const uniqueWallets = [
+              ...new Set(
+                Object.values(events)
+                  .filter((event) => event && event.wallet)
+                  .map((event) => event.wallet)
+              ),
+            ];
+
+            // For each wallet, find their latest event
+            const walletContributions = uniqueWallets.map((wallet) => {
+              // Since events are chronologically indexed, find the last event for this wallet
+              const latestEvent = Object.values(events)
+                .filter((event) => event && event.wallet === wallet)
+                .pop(); // Gets last element since events are chronologically indexed
+              return latestEvent;
+            });
+
+            // Sum up all wallet contributions into bins
+            walletContributions.forEach((event) => {
+              if (!event || !event.timestamp) return;
+              const time =
+                new Date(event.timestamp) < startTime ||
+                new Date(event.timestamp) > endTime;
+              if (time) return;
+              const eventBin = findBinForTimestamp(event.timestamp, bins);
+              if (eventsByBin[eventBin]) {
+                eventsByBin[eventBin].anti += Number(event.anti) || 0;
+                eventsByBin[eventBin].pro += Number(event.pro) || 0;
+                eventsByBin[eventBin].baryon += Number(event.baryon) || 0;
+                eventsByBin[eventBin].photon += Number(event.photon) || 0;
               }
             });
           }
