@@ -10,7 +10,7 @@ const KV = Antitoken_Collider_Alpha;
 
 // Set duration
 const START_TIME = "2025-01-06T00:00:00.000Z";
-const END_TIME = "2025-01-10T00:00:00.000Z";
+const END_TIME = "2025-01-11T00:00:00.000Z";
 
 // Calculate globals
 const startTime = new Date(START_TIME);
