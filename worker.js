@@ -9,8 +9,8 @@ const PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump";
 const KV = Antitoken_Collider_Beta;
 
 // Set duration
-const START_TIME = "2025-01-05T00:00:00.000Z";
-const END_TIME = "2025-01-09T00:00:00.000Z";
+const START_TIME = "2025-01-08T00:00:00.000Z";
+const END_TIME = "2025-01-12T00:00:00.000Z";
 
 // Calculate globals
 const startTime = new Date(START_TIME);
@@ -23,7 +23,7 @@ if (timeDiffHours <= 24) {
   binningStrategy = "hourly";
 } else if (timeDiffHours <= 48) {
   binningStrategy = "6-hour";
-} else if (timeDiffHours <= 96) {
+} else if (timeDiffHours <= 72) {
   binningStrategy = "12-hour";
 } else {
   binningStrategy = "daily";
@@ -133,6 +133,8 @@ async function handleRequest(request) {
 
   if (request.method === "GET" && path === "/claims") {
     try {
+      const nowTime = new Date();
+
       // Get all account claims
       const accountValues = JSON.parse(
         (await KV.get("account_claims")) || "{}"
@@ -231,6 +233,11 @@ async function handleRequest(request) {
             // Sum up all wallet contributions into bins
             walletContributions.forEach((event) => {
               if (!event || !event.timestamp) return;
+              /*
+              const time =
+                new Date(event.timestamp) < endTime ||
+                new Date(event.timestamp) > nowTime;
+              */
               const time = new Date(event.timestamp) < endTime;
               if (time) return;
               const eventBin = findBinForTimestamp(event.timestamp, bins);
@@ -247,10 +254,22 @@ async function handleRequest(request) {
 
       // Second pass: Calculate cumulative totals for all bins
       bins.forEach((bin) => {
-        cumulativePro += eventsByBin[bin].pro;
-        cumulativeAnti += eventsByBin[bin].anti;
-        cumulativeBaryon += eventsByBin[bin].baryon;
-        cumulativePhoton += eventsByBin[bin].photon;
+        /*
+        const _bin = parseCustomDate(bin);
+        const time = _bin < endTime || _bin > nowTime;
+        */
+        const time = false;
+        if (time) {
+          cumulativePro = 0;
+          cumulativeAnti = 0;
+          cumulativeBaryon = 0;
+          cumulativePhoton = 0;
+        } else {
+          cumulativePro += eventsByBin[bin].pro;
+          cumulativeAnti += eventsByBin[bin].anti;
+          cumulativeBaryon += eventsByBin[bin].baryon;
+          cumulativePhoton += eventsByBin[bin].photon;
+        }
         eventsOverBins[bin] = {
           pro: cumulativePro,
           anti: cumulativeAnti,
@@ -395,6 +414,8 @@ async function handleRequest(request) {
 
   if (request.method === "GET" && path === "/balances") {
     try {
+      const nowTime = new Date();
+
       // Get all account balances
       const accountValues = JSON.parse(
         (await KV.get("account_balances")) || "{}"
@@ -493,6 +514,12 @@ async function handleRequest(request) {
             // Sum up all wallet contributions into bins
             walletContributions.forEach((event) => {
               if (!event || !event.timestamp) return;
+              /*
+              const time =
+                new Date(event.timestamp) < startTime ||
+                new Date(event.timestamp) > endTime ||
+                new Date(event.timestamp) > nowTime;
+              */
               const time =
                 new Date(event.timestamp) < startTime ||
                 new Date(event.timestamp) > endTime;
@@ -511,11 +538,22 @@ async function handleRequest(request) {
 
       // Second pass: Calculate cumulative totals for all bins
       bins.forEach((bin) => {
-        cumulativePro += eventsByBin[bin].pro;
-        cumulativeAnti += eventsByBin[bin].anti;
-        cumulativeBaryon += eventsByBin[bin].baryon;
-        cumulativePhoton += eventsByBin[bin].photon;
-
+        /*
+        const _bin = parseCustomDate(bin);
+        const time = _bin < startTime || _bin > endTime || _bin > nowTime;
+        */
+        const time = false;
+        if (time) {
+          cumulativePro = 0;
+          cumulativeAnti = 0;
+          cumulativeBaryon = 0;
+          cumulativePhoton = 0;
+        } else {
+          cumulativePro += eventsByBin[bin].pro;
+          cumulativeAnti += eventsByBin[bin].anti;
+          cumulativeBaryon += eventsByBin[bin].baryon;
+          cumulativePhoton += eventsByBin[bin].photon;
+        }
         eventsOverBins[bin] = {
           pro: cumulativePro,
           anti: cumulativeAnti,
