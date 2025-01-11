@@ -6,16 +6,94 @@ const ORIGIN = "http://localhost:3000"; // "http://localhost:3000" || "https://s
 const ANTI_TOKEN_MINT = "EWkvvNnLasHCBpeDbitzx9pC8PMX4QSdnMPfxGsFpump";
 const PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump";
 const KV = Antitoken_Collider_Beta;
-const START_TIME = "2025-01-05T05:30:00.000Z";
-const END_TIME = "2025-01-05T11:30:00.000Z";
 
+// Set duration
+const START_TIME = "2025-01-08T00:00:00.000Z";
+const END_TIME = "2025-01-12T00:00:00.000Z";
+
+// Calculate globals
 const startTime = new Date(START_TIME);
 const endTime = new Date(END_TIME);
 const timeDiffHours = (endTime - startTime) / (1000 * 60 * 60);
-const useHourly = timeDiffHours < 24;
-const duration = useHourly
-  ? Math.ceil(timeDiffHours) + 3
-  : Math.ceil((endTime - startTime) / (1000 * 60 * 60 * 24)) + 3;
+
+// Determine the binning strategy based on duration
+let binningStrategy;
+if (timeDiffHours <= 24) {
+  binningStrategy = "hourly";
+} else if (timeDiffHours <= 48) {
+  binningStrategy = "6-hour";
+} else if (timeDiffHours <= 144) {
+  binningStrategy = "12-hour";
+} else {
+  binningStrategy = "daily";
+}
+
+// Calculate binning based on binning strategy
+const duration = (() => {
+  switch (binningStrategy) {
+    case "hourly":
+      // Pad with 1 bin each to the left & right (+ 1)
+      return Math.ceil(timeDiffHours) + 3;
+    case "6-hour":
+      // Pad with 1 bin each to the left & right (+ 1)
+      return Math.ceil(timeDiffHours / 6) + 3;
+    case "12-hour":
+      // Pad with 1 bin each to the left & right (+ 1)
+      return Math.ceil(timeDiffHours / 12) + 3;
+    default:
+      // Pad with 1 bin each to the left & right (+ 1)
+      return Math.ceil((endTime - startTime) / (1000 * 60 * 60 * 24)) + 3;
+  }
+})();
+
+function parseCustomDate(dateStr) {
+  // Check if date includes time
+  const parts = dateStr.split(", ");
+  const hasTime = parts.length > 2;
+  const monthDay = parts[0];
+  const year = parts[1];
+  const time = hasTime ? parts[2] : null;
+  const [month, day] = monthDay.split(" ");
+  // Convert month abbreviation to number
+  const months = {
+    Jan: 0,
+    Feb: 1,
+    Mar: 2,
+    Apr: 3,
+    May: 4,
+    Jun: 5,
+    Jul: 6,
+    Aug: 7,
+    Sep: 8,
+    Oct: 9,
+    Nov: 10,
+    Dec: 11,
+  };
+  if (hasTime) {
+    // Parse time if present
+    const [hour, period] = time.split(" ");
+    // Convert hour to 24-hour format
+    let hour24 = parseInt(hour);
+    if (period === "PM" && hour24 !== 12) hour24 += 12;
+    if (period === "AM" && hour24 === 12) hour24 = 0;
+
+    return new Date(parseInt(year), months[month], parseInt(day), hour24);
+  }
+  // Return date without time
+  return new Date(parseInt(year), months[month], parseInt(day));
+}
+
+// Binning helper
+const findBinForTimestamp = (timestamp, bins) => {
+  const timestampDate = new Date(timestamp);
+  // Find the first bin whose date is less than or equal to our timestamp
+  return (
+    bins.findLast((bin) => {
+      const binDate = parseCustomDate(bin);
+      return binDate <= timestampDate;
+    }) || bins[0]
+  ); // Default to first bin if timestamp is before all bins
+};
 
 addEventListener("fetch", (event) => {
   event.respondWith(handleRequest(event.request));
@@ -54,6 +132,8 @@ async function handleRequest(request) {
 
   if (request.method === "GET" && path === "/claims") {
     try {
+      const nowTime = new Date();
+
       // Get all account claims
       const accountValues = JSON.parse(
         (await KV.get("account_claims")) || "{}"
@@ -85,46 +165,37 @@ async function handleRequest(request) {
         proBalances.push(balance.pro);
       });
 
-      // Calculate events over time (last N +/- 1 hours/days)
-      const dates = Array.from({ length: duration }, (_, i) => {
-        const date = new Date(END_TIME);
-        if (useHourly) {
-          date.setHours(date.getHours() - i + 1);
-        } else {
-          date.setDate(date.getDate() - i + 1);
+      // Calculate events over time (last N +/- 1 bins)
+      const bins = Array.from({ length: duration }, (_, i) => {
+        const bins = new Date(END_TIME);
+        switch (binningStrategy) {
+          case "hourly":
+            bins.setHours(bins.getHours() - i + 1);
+            break;
+          case "6-hour":
+            bins.setHours(bins.getHours() - i * 6 + 6);
+            break;
+          case "12-hour":
+            bins.setHours(bins.getHours() - i * 12 + 12);
+            break;
+          default:
+            bins.setDate(bins.getDate() - i + 1);
         }
-        return date.toLocaleDateString("en-US", {
+        return bins.toLocaleDateString("en-US", {
           timeZone: "UTC",
           year: "numeric",
           month: "short",
           day: "numeric",
-          ...(useHourly && { hour: "numeric", hour12: true }),
+          ...(binningStrategy !== "daily" && { hour: "numeric", hour12: true }),
         });
       }).reverse();
 
-      // Calculate events over time (last N hours/days)
-      const datesStrict = Array.from({ length: duration }, (_, i) => {
-        const date = new Date(END_TIME);
-        if (useHourly) {
-          date.setHours(date.getHours() - i + 1);
-        } else {
-          date.setDate(date.getDate() - i + 1);
-        }
-        return date.toLocaleDateString("en-US", {
-          timeZone: "UTC",
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          ...(useHourly && { hour: "numeric", hour12: true }),
-        });
-      }).reverse();
-
-      // Get all event records and bin them by date/hour
-      const eventsByDay = {};
-      const eventsOverDays = {};
-      dates.forEach((date) => {
-        eventsByDay[date] = { pro: 0, anti: 0, baryon: 0, photon: 0 };
-        eventsOverDays[date] = { pro: 0, anti: 0, baryon: 0, photon: 0 };
+      // Get all event records and bin them
+      const eventsByBin = {};
+      const eventsOverBins = {};
+      bins.forEach((bin) => {
+        eventsByBin[bin] = { pro: 0, anti: 0, baryon: 0, photon: 0 };
+        eventsOverBins[bin] = { pro: 0, anti: 0, baryon: 0, photon: 0 };
       });
 
       // Iterate through all events in KV
@@ -134,47 +205,71 @@ async function handleRequest(request) {
       let cumulativeBaryon = 0;
       let cumulativePhoton = 0;
 
-      // First pass: Calculate hourly/daily totals
+      // First pass: Calculate by-bin totals
       for (const key of allEvents.keys) {
         if (key.name !== "account_balances" && key.name !== "account_claims") {
           const _key = await KV.get(key.name);
           if (_key) {
             const events = JSON.parse(_key);
-            Object.values(events).forEach((event) => {
-              if (event && event.timestamp) {
-                const time = new Date(event.timestamp) < endTime;
-                if (time) return;
-                const eventDate = new Date(event.timestamp).toLocaleDateString(
-                  "en-US",
-                  {
-                    timeZone: "UTC",
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                    ...(useHourly && { hour: "numeric", hour12: true }),
-                  }
-                );
+            // Get array of unique wallets
+            const uniqueWallets = [
+              ...new Set(
+                Object.values(events)
+                  .filter((event) => event && event.wallet)
+                  .map((event) => event.wallet)
+              ),
+            ];
 
-                if (eventsByDay[eventDate]) {
-                  eventsByDay[eventDate].anti += Number(event.anti) || 0;
-                  eventsByDay[eventDate].pro += Number(event.pro) || 0;
-                  eventsByDay[eventDate].baryon += Number(event.baryon) || 0;
-                  eventsByDay[eventDate].photon += Number(event.photon) || 0;
-                }
+            // For each wallet, find their latest event
+            const walletContributions = uniqueWallets.map((wallet) => {
+              // Since events are chronologically indexed, find the last event for this wallet
+              const latestEvent = Object.values(events)
+                .filter((event) => event && event.wallet === wallet)
+                .pop(); // Gets last element since events are chronologically indexed
+              return latestEvent;
+            });
+
+            // Sum up all wallet contributions into bins
+            walletContributions.forEach((event) => {
+              if (!event || !event.timestamp) return;
+              /*
+              const time =
+                new Date(event.timestamp) < endTime ||
+                new Date(event.timestamp) > nowTime;
+              */
+              const time = new Date(event.timestamp) < endTime;
+              if (time) return;
+              const eventBin = findBinForTimestamp(event.timestamp, bins);
+              if (eventsByBin[eventBin]) {
+                eventsByBin[eventBin].anti += Number(event.anti) || 0;
+                eventsByBin[eventBin].pro += Number(event.pro) || 0;
+                eventsByBin[eventBin].baryon += Number(event.baryon) || 0;
+                eventsByBin[eventBin].photon += Number(event.photon) || 0;
               }
             });
           }
         }
       }
 
-      // Second pass: Calculate cumulative totals for all dates
-      datesStrict.forEach((date) => {
-        cumulativePro += eventsByDay[date].pro;
-        cumulativeAnti += eventsByDay[date].anti;
-        cumulativeBaryon += eventsByDay[date].baryon;
-        cumulativePhoton += eventsByDay[date].photon;
-
-        eventsOverDays[date] = {
+      // Second pass: Calculate cumulative totals for all bins
+      bins.forEach((bin) => {
+        /*
+        const _bin = parseCustomDate(bin);
+        const time = _bin < endTime || _bin > nowTime;
+        */
+        const time = false;
+        if (time) {
+          cumulativePro = 0;
+          cumulativeAnti = 0;
+          cumulativeBaryon = 0;
+          cumulativePhoton = 0;
+        } else {
+          cumulativePro += eventsByBin[bin].pro;
+          cumulativeAnti += eventsByBin[bin].anti;
+          cumulativeBaryon += eventsByBin[bin].baryon;
+          cumulativePhoton += eventsByBin[bin].photon;
+        }
+        eventsOverBins[bin] = {
           pro: cumulativePro,
           anti: cumulativeAnti,
           baryon: cumulativeBaryon,
@@ -286,12 +381,12 @@ async function handleRequest(request) {
           proTokens: totalProTokens,
         },
         eventsOverTime: {
-          timestamps: dates,
+          timestamps: bins,
           events: {
-            pro: dates.map((date) => eventsByDay[date].pro),
-            anti: dates.map((date) => eventsByDay[date].anti),
-            photon: dates.map((date) => eventsByDay[date].photon),
-            baryon: dates.map((date) => eventsByDay[date].baryon),
+            pro: bins.map((bin) => eventsByBin[bin].pro),
+            anti: bins.map((bin) => eventsByBin[bin].anti),
+            photon: bins.map((bin) => eventsByBin[bin].photon),
+            baryon: bins.map((bin) => eventsByBin[bin].baryon),
           },
           ranges: {
             pro: tokenRangesPro,
@@ -300,11 +395,11 @@ async function handleRequest(request) {
             baryon: tokenRangesBaryon,
           },
           cumulative: {
-            timestamps: datesStrict,
-            pro: dates.map((date) => eventsOverDays[date].pro),
-            anti: dates.map((date) => eventsOverDays[date].anti),
-            photon: dates.map((date) => eventsOverDays[date].photon),
-            baryon: dates.map((date) => eventsOverDays[date].baryon),
+            timestamps: bins,
+            pro: bins.map((bin) => eventsOverBins[bin].pro),
+            anti: bins.map((bin) => eventsOverBins[bin].anti),
+            photon: bins.map((bin) => eventsOverBins[bin].photon),
+            baryon: bins.map((bin) => eventsOverBins[bin].baryon),
           },
         },
       };
@@ -318,6 +413,8 @@ async function handleRequest(request) {
 
   if (request.method === "GET" && path === "/balances") {
     try {
+      const nowTime = new Date();
+
       // Get all account balances
       const accountValues = JSON.parse(
         (await KV.get("account_balances")) || "{}"
@@ -349,46 +446,37 @@ async function handleRequest(request) {
         proBalances.push(balance.pro);
       });
 
-      // Calculate events over time (last N +/- 1 hours/days)
-      const dates = Array.from({ length: duration }, (_, i) => {
-        const date = new Date(END_TIME);
-        if (useHourly) {
-          date.setHours(date.getHours() - i + 1);
-        } else {
-          date.setDate(date.getDate() - i + 1);
+      // Calculate events over time (last N +/- 1 bins)
+      const bins = Array.from({ length: duration }, (_, i) => {
+        const bins = new Date(END_TIME);
+        switch (binningStrategy) {
+          case "hourly":
+            bins.setHours(bins.getHours() - i + 1);
+            break;
+          case "6-hour":
+            bins.setHours(bins.getHours() - i * 6 + 6);
+            break;
+          case "12-hour":
+            bins.setHours(bins.getHours() - i * 12 + 12);
+            break;
+          default:
+            bins.setDate(bins.getDate() - i + 1);
         }
-        return date.toLocaleDateString("en-US", {
+        return bins.toLocaleDateString("en-US", {
           timeZone: "UTC",
           year: "numeric",
           month: "short",
           day: "numeric",
-          ...(useHourly && { hour: "numeric", hour12: true }),
+          ...(binningStrategy !== "daily" && { hour: "numeric", hour12: true }),
         });
       }).reverse();
 
-      // Calculate events over time (last N hours/days)
-      const datesStrict = Array.from({ length: duration }, (_, i) => {
-        const date = new Date(END_TIME);
-        if (useHourly) {
-          date.setHours(date.getHours() - i + 1);
-        } else {
-          date.setDate(date.getDate() - i + 1);
-        }
-        return date.toLocaleDateString("en-US", {
-          timeZone: "UTC",
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          ...(useHourly && { hour: "numeric", hour12: true }),
-        });
-      }).reverse();
-
-      // Get all event records and bin them by date
-      const eventsByDay = {};
-      const eventsOverDays = {};
-      dates.forEach((date) => {
-        eventsByDay[date] = { pro: 0, anti: 0, baryon: 0, photon: 0 };
-        eventsOverDays[date] = { pro: 0, anti: 0, baryon: 0, photon: 0 };
+      // Get all event records and bin them
+      const eventsByBin = {};
+      const eventsOverBins = {};
+      bins.forEach((bin) => {
+        eventsByBin[bin] = { pro: 0, anti: 0, baryon: 0, photon: 0 };
+        eventsOverBins[bin] = { pro: 0, anti: 0, baryon: 0, photon: 0 };
       });
 
       // Iterate through all events in KV
@@ -398,49 +486,74 @@ async function handleRequest(request) {
       let cumulativeBaryon = 0;
       let cumulativePhoton = 0;
 
-      // First pass: Calculate daily totals
+      // First pass: Calculate by-bin totals
       for (const key of allEvents.keys) {
         if (key.name !== "account_balances" && key.name !== "account_claims") {
           const _key = await KV.get(key.name);
           if (_key) {
             const events = JSON.parse(_key);
-            Object.values(events).forEach((event) => {
-              if (event && event.timestamp) {
-                const time =
-                  new Date(event.timestamp) < startTime ||
-                  new Date(event.timestamp) > endTime;
-                if (time) return;
-                const eventDate = new Date(event.timestamp).toLocaleDateString(
-                  "en-US",
-                  {
-                    timeZone: "UTC",
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                    ...(useHourly && { hour: "numeric", hour12: true }),
-                  }
-                );
+            // Get array of unique wallets
+            const uniqueWallets = [
+              ...new Set(
+                Object.values(events)
+                  .filter((event) => event && event.wallet)
+                  .map((event) => event.wallet)
+              ),
+            ];
 
-                if (eventsByDay[eventDate]) {
-                  eventsByDay[eventDate].anti += Number(event.anti) || 0;
-                  eventsByDay[eventDate].pro += Number(event.pro) || 0;
-                  eventsByDay[eventDate].baryon += Number(event.baryon) || 0;
-                  eventsByDay[eventDate].photon += Number(event.photon) || 0;
-                }
+            // For each wallet, find their latest event
+            const walletContributions = uniqueWallets.map((wallet) => {
+              // Since events are chronologically indexed, find the last event for this wallet
+              const latestEvent = Object.values(events)
+                .filter((event) => event && event.wallet === wallet)
+                .pop(); // Gets last element since events are chronologically indexed
+              return latestEvent;
+            });
+
+            // Sum up all wallet contributions into bins
+            walletContributions.forEach((event) => {
+              if (!event || !event.timestamp) return;
+              /*
+              const time =
+                new Date(event.timestamp) < startTime ||
+                new Date(event.timestamp) > endTime ||
+                new Date(event.timestamp) > nowTime;
+              */
+              const time =
+                new Date(event.timestamp) < startTime ||
+                new Date(event.timestamp) > endTime;
+              if (time) return;
+              const eventBin = findBinForTimestamp(event.timestamp, bins);
+              if (eventsByBin[eventBin]) {
+                eventsByBin[eventBin].anti += Number(event.anti) || 0;
+                eventsByBin[eventBin].pro += Number(event.pro) || 0;
+                eventsByBin[eventBin].baryon += Number(event.baryon) || 0;
+                eventsByBin[eventBin].photon += Number(event.photon) || 0;
               }
             });
           }
         }
       }
 
-      // Second pass: Calculate cumulative totals for all dates
-      datesStrict.forEach((date) => {
-        cumulativePro += eventsByDay[date].pro;
-        cumulativeAnti += eventsByDay[date].anti;
-        cumulativeBaryon += eventsByDay[date].baryon;
-        cumulativePhoton += eventsByDay[date].photon;
-
-        eventsOverDays[date] = {
+      // Second pass: Calculate cumulative totals for all bins
+      bins.forEach((bin) => {
+        /*
+        const _bin = parseCustomDate(bin);
+        const time = _bin < startTime || _bin > endTime || _bin > nowTime;
+        */
+        const time = false;
+        if (time) {
+          cumulativePro = 0;
+          cumulativeAnti = 0;
+          cumulativeBaryon = 0;
+          cumulativePhoton = 0;
+        } else {
+          cumulativePro += eventsByBin[bin].pro;
+          cumulativeAnti += eventsByBin[bin].anti;
+          cumulativeBaryon += eventsByBin[bin].baryon;
+          cumulativePhoton += eventsByBin[bin].photon;
+        }
+        eventsOverBins[bin] = {
           pro: cumulativePro,
           anti: cumulativeAnti,
           baryon: cumulativeBaryon,
@@ -548,12 +661,12 @@ async function handleRequest(request) {
           proTokens: totalProTokens,
         },
         eventsOverTime: {
-          timestamps: dates,
+          timestamps: bins,
           events: {
-            pro: dates.map((date) => eventsByDay[date].pro),
-            anti: dates.map((date) => eventsByDay[date].anti),
-            photon: dates.map((date) => eventsByDay[date].photon),
-            baryon: dates.map((date) => eventsByDay[date].baryon),
+            pro: bins.map((bin) => eventsByBin[bin].pro),
+            anti: bins.map((bin) => eventsByBin[bin].anti),
+            photon: bins.map((bin) => eventsByBin[bin].photon),
+            baryon: bins.map((bin) => eventsByBin[bin].baryon),
           },
           ranges: {
             pro: tokenRangesPro,
@@ -562,11 +675,11 @@ async function handleRequest(request) {
             baryon: tokenRangesBaryon,
           },
           cumulative: {
-            timestamps: datesStrict,
-            pro: dates.map((date) => eventsOverDays[date].pro),
-            anti: dates.map((date) => eventsOverDays[date].anti),
-            photon: dates.map((date) => eventsOverDays[date].photon),
-            baryon: dates.map((date) => eventsOverDays[date].baryon),
+            timestamps: bins,
+            pro: bins.map((bin) => eventsOverBins[bin].pro),
+            anti: bins.map((bin) => eventsOverBins[bin].anti),
+            photon: bins.map((bin) => eventsOverBins[bin].photon),
+            baryon: bins.map((bin) => eventsOverBins[bin].baryon),
           },
         },
       };
