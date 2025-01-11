@@ -23,7 +23,7 @@ if (timeDiffHours <= 24) {
   binningStrategy = "hourly";
 } else if (timeDiffHours <= 48) {
   binningStrategy = "6-hour";
-} else if (timeDiffHours <= 72) {
+} else if (timeDiffHours <= 144) {
   binningStrategy = "12-hour";
 } else {
   binningStrategy = "daily";
