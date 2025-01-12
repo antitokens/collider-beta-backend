@@ -2,14 +2,18 @@ import { Connection, PublicKey } from "@solana/web3.js";
 
 const endpoint =
   "https://greatest-smart-tent.solana-mainnet.quiknode.pro/c61afb9af2756c92f1dc812ac2a5b8b68c0602ff";
-const ORIGIN = "http://localhost:3000"; // "http://localhost:3000" || "https://stage.antitoken.pro"
+const ORIGINS = [
+  "https://stage.antitoken.pro",
+  "https://lite.antitoken.pro",
+  "http://localhost:3000",
+];
 const ANTI_TOKEN_MINT = "EWkvvNnLasHCBpeDbitzx9pC8PMX4QSdnMPfxGsFpump";
 const PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump";
 const KV = Antitoken_Collider_Beta;
 
 // Set duration
 const START_TIME = "2025-01-08T00:00:00.000Z";
-const END_TIME = "2025-01-12T00:00:00.000Z";
+const END_TIME = "2025-01-13T00:00:00.000Z";
 
 // Calculate globals
 const startTime = new Date(START_TIME);
@@ -127,7 +131,7 @@ async function handleRequest(request) {
 
   if (request.method === "OPTIONS") {
     // Handle CORS preflight requests
-    return handleCorsPreflight();
+    return handleCorsPreflight(ORIGINS);
   }
 
   if (request.method === "GET" && path === "/claims") {
@@ -863,21 +867,34 @@ async function handleRequest(request) {
   return createCorsResponse("NOT_FOUND", { status: 404 });
 }
 
-function createCorsResponse(body, init = {}) {
+function createCorsResponse(body, init = {}, ORIGINS = []) {
   const headers = new Headers(init.headers || {});
-  headers.set("Access-Control-Allow-Origin", ORIGIN);
+  // Get the request origin from init or default to '*'
+  const requestOrigin = init.origin || "*";
+  // Set Access-Control-Allow-Origin based on allowed origins
+  if (ORIGINS.length === 0 || ORIGINS.includes(requestOrigin)) {
+    headers.set("Access-Control-Allow-Origin", requestOrigin);
+  } else {
+    headers.set("Access-Control-Allow-Origin", ORIGINS[0]); // Default to first allowed origin
+  }
   headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   headers.set("Access-Control-Allow-Headers", "Content-Type");
   headers.set("Content-Type", "application/json");
-
   const jsonBody =
     typeof body === "string" ? JSON.stringify({ message: body }) : body;
   return new Response(jsonBody, { ...init, headers });
 }
 
-function handleCorsPreflight() {
+function handleCorsPreflight(ORIGINS = []) {
   const headers = new Headers();
-  headers.set("Access-Control-Allow-Origin", ORIGIN);
+  // Get the request origin from the OPTIONS request
+  const requestOrigin = request.headers.get("Origin") || "*";
+  // Set Access-Control-Allow-Origin based on allowed origins
+  if (ORIGINS.length === 0 || ORIGINS.includes(requestOrigin)) {
+    headers.set("Access-Control-Allow-Origin", requestOrigin);
+  } else {
+    headers.set("Access-Control-Allow-Origin", ORIGINS[0]); // Default to first allowed origin
+  }
   headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   headers.set("Access-Control-Allow-Headers", "Content-Type");
   headers.set("Access-Control-Max-Age", "86400"); // Cache for 1 day
