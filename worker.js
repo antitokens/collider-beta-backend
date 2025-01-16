@@ -2,14 +2,14 @@ import { Connection, PublicKey } from "@solana/web3.js";
 
 const endpoint =
   "https://greatest-smart-tent.solana-mainnet.quiknode.pro/c61afb9af2756c92f1dc812ac2a5b8b68c0602ff";
-const ORIGINS = ["https://lite.antitoken.pro"];
+const ORIGINS = ["https://lite.antitoken.pro", "http://localhost:3000"];
 const ANTI_TOKEN_MINT = "EWkvvNnLasHCBpeDbitzx9pC8PMX4QSdnMPfxGsFpump";
 const PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump";
-const KV = Antitoken_Collider_Alpha;
+const KV = Antitoken_Collider_Lite;
 
 // Set duration
-const START_TIME = "2025-01-06T00:00:00.000Z";
-const END_TIME = "2025-01-12T00:00:00.000Z";
+const START_TIME = "2025-01-12T00:00:00.000Z";
+const END_TIME = "2025-01-18T00:00:00.000Z";
 
 // Calculate globals
 const startTime = new Date(START_TIME);
