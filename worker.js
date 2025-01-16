@@ -2,7 +2,7 @@ import { Connection, PublicKey } from "@solana/web3.js";
 
 const endpoint =
   "https://greatest-smart-tent.solana-mainnet.quiknode.pro/c61afb9af2756c92f1dc812ac2a5b8b68c0602ff";
-const ORIGINS = ["https://app.antitoken.pro", "https://lite.antitoken.pro"];
+const ORIGINS = ["https://app.antitoken.pro"];
 const ANTI_TOKEN_MINT = "EWkvvNnLasHCBpeDbitzx9pC8PMX4QSdnMPfxGsFpump";
 const PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump";
 const KV = Antitoken_Collider_Alpha;
