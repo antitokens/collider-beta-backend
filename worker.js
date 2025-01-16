@@ -46,54 +46,12 @@ const duration = (() => {
   }
 })();
 
-function parseCustomDate(dateStr) {
-  // Check if date includes time
-  const parts = dateStr.split(", ");
-  const hasTime = parts.length > 2;
-  const monthDay = parts[0];
-  const year = parts[1];
-  const time = hasTime ? parts[2] : null;
-  const [month, day] = monthDay.split(" ");
-  // Convert month abbreviation to number
-  const months = {
-    Jan: 0,
-    Feb: 1,
-    Mar: 2,
-    Apr: 3,
-    May: 4,
-    Jun: 5,
-    Jul: 6,
-    Aug: 7,
-    Sep: 8,
-    Oct: 9,
-    Nov: 10,
-    Dec: 11,
-  };
-  if (hasTime) {
-    // Parse time if present
-    const [hour, period] = time.split(" ");
-    // Convert hour to 24-hour format
-    let hour24 = parseInt(hour);
-    if (period === "PM" && hour24 !== 12) hour24 += 12;
-    if (period === "AM" && hour24 === 12) hour24 = 0;
+function formatUTCDateTime(date, binningStrategy = null) {}
 
-    return new Date(parseInt(year), months[month], parseInt(day), hour24);
-  }
-  // Return date without time
-  return new Date(parseInt(year), months[month], parseInt(day));
-}
+function parseCustomDate(dateStr) {}
 
 // Binning helper
-const findBinForTimestamp = (timestamp, bins) => {
-  const timestampDate = new Date(timestamp);
-  // Find the first bin whose date is less than or equal to our timestamp
-  return (
-    bins.findLast((bin) => {
-      const binDate = parseCustomDate(bin);
-      return binDate <= timestampDate;
-    }) || bins[0]
-  ); // Default to first bin if timestamp is before all bins
-};
+const findBinForTimestamp = (timestamp, bins) => {};
 
 addEventListener("fetch", (event) => {
   event.respondWith(handleRequest(event.request));
@@ -170,24 +128,18 @@ async function handleRequest(request) {
         const bins = new Date(END_TIME);
         switch (binningStrategy) {
           case "hourly":
-            bins.setHours(bins.getHours() - i + 1);
+            bins.setUTCHours(bins.getUTCHours() - i + 1);
             break;
           case "6-hour":
-            bins.setHours(bins.getHours() - i * 6 + 6);
+            bins.setUTCHours(bins.getUTCHours() - i * 6 + 6);
             break;
           case "12-hour":
-            bins.setHours(bins.getHours() - i * 12 + 12);
+            bins.setUTCHours(bins.getUTCHours() - i * 12 + 12);
             break;
           default:
-            bins.setDate(bins.getDate() - i + 1);
+            bins.setUTCDate(bins.getUTCDate() - i + 1);
         }
-        return bins.toLocaleDateString("en-US", {
-          timeZone: "UTC",
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          ...(binningStrategy !== "daily" && { hour: "numeric", hour12: true }),
-        });
+        return formatUTCDateTime(bins, binningStrategy);
       }).reverse();
 
       // Get all event records and bin them
@@ -451,24 +403,18 @@ async function handleRequest(request) {
         const bins = new Date(END_TIME);
         switch (binningStrategy) {
           case "hourly":
-            bins.setHours(bins.getHours() - i + 1);
+            bins.setUTCHours(bins.getUTCHours() - i + 1);
             break;
           case "6-hour":
-            bins.setHours(bins.getHours() - i * 6 + 6);
+            bins.setUTCHours(bins.getUTCHours() - i * 6 + 6);
             break;
           case "12-hour":
-            bins.setHours(bins.getHours() - i * 12 + 12);
+            bins.setUTCHours(bins.getUTCHours() - i * 12 + 12);
             break;
           default:
-            bins.setDate(bins.getDate() - i + 1);
+            bins.setUTCDate(bins.getUTCDate() - i + 1);
         }
-        return bins.toLocaleDateString("en-US", {
-          timeZone: "UTC",
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          ...(binningStrategy !== "daily" && { hour: "numeric", hour12: true }),
-        });
+        return formatUTCDateTime(bins, binningStrategy);
       }).reverse();
 
       // Get all event records and bin them
