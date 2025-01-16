@@ -20,7 +20,7 @@ const timeDiffHours = (endTime - startTime) / (1000 * 60 * 60);
 let binningStrategy;
 if (timeDiffHours <= 24) {
   binningStrategy = "hourly";
-} else if (timeDiffHours <= 48) {
+} else if (timeDiffHours <= 72) {
   binningStrategy = "6-hour";
 } else if (timeDiffHours <= 144) {
   binningStrategy = "12-hour";
