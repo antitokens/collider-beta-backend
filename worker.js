@@ -2,17 +2,14 @@ import { Connection, PublicKey } from "@solana/web3.js";
 
 const endpoint =
   "https://greatest-smart-tent.solana-mainnet.quiknode.pro/c61afb9af2756c92f1dc812ac2a5b8b68c0602ff";
-const ORIGINS = [
-  "https://stage.antitoken.pro",
-  "http://localhost:3000",
-];
+const ORIGINS = ["https://stage.antitoken.pro", "http://localhost:3000"];
 const ANTI_TOKEN_MINT = "EWkvvNnLasHCBpeDbitzx9pC8PMX4QSdnMPfxGsFpump";
 const PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump";
 const KV = Antitoken_Collider_Beta;
 
 // Set duration
-const START_TIME = "2025-01-06T00:00:00.000Z";
-const END_TIME = "2025-01-12T00:00:00.000Z";
+const START_TIME = "2025-01-15T18:00:00.000Z";
+const END_TIME = "2025-01-17T18:00:00.000Z";
 
 // Calculate globals
 const startTime = new Date(START_TIME);
@@ -49,12 +46,73 @@ const duration = (() => {
   }
 })();
 
-function formatUTCDateTime(date, binningStrategy = null) {}
+function formatUTCDateTime(date, binningStrategy = null) {
+  if (binningStrategy === "daily") {
+    return date.toLocaleDateString("en-US", {
+      timeZone: "UTC",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  }
+  return date.toLocaleDateString("en-US", {
+    timeZone: "UTC",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
 
-function parseCustomDate(dateStr) {}
+function parseCustomDate(dateStr) {
+  const parts = dateStr.split(", ");
+  const hasTime = parts.length > 2;
+  const monthDay = parts[0];
+  const year = parts[1];
+  const time = hasTime ? parts[2] : null;
+  const [month, day] = monthDay.split(" ");
+
+  const months = {
+    Jan: 0,
+    Feb: 1,
+    Mar: 2,
+    Apr: 3,
+    May: 4,
+    Jun: 5,
+    Jul: 6,
+    Aug: 7,
+    Sep: 8,
+    Oct: 9,
+    Nov: 10,
+    Dec: 11,
+  };
+
+  if (hasTime) {
+    const [hour, period] = time.split(" ");
+    let hour24 = parseInt(hour);
+    if (period === "PM" && hour24 !== 12) hour24 += 12;
+    if (period === "AM" && hour24 === 12) hour24 = 0;
+
+    return new Date(
+      Date.UTC(parseInt(year), months[month], parseInt(day), hour24)
+    );
+  }
+
+  return new Date(Date.UTC(parseInt(year), months[month], parseInt(day)));
+}
 
 // Binning helper
-const findBinForTimestamp = (timestamp, bins) => {};
+const findBinForTimestamp = (timestamp, bins) => {
+  const timestampDate = new Date(timestamp);
+  return (
+    bins.findLast((bin) => {
+      const binDate = parseCustomDate(bin);
+      return binDate.getTime() <= timestampDate.getTime();
+    }) || bins[0]
+  );
+};
 
 addEventListener("fetch", (event) => {
   event.respondWith(handleRequest(event.request));
@@ -187,11 +245,6 @@ async function handleRequest(request) {
             // Sum up all wallet contributions into bins
             walletContributions.forEach((event) => {
               if (!event || !event.timestamp) return;
-              /*
-              const time =
-                new Date(event.timestamp) < endTime ||
-                new Date(event.timestamp) > nowTime;
-              */
               const time = new Date(event.timestamp) < endTime;
               if (time) return;
               const eventBin = findBinForTimestamp(event.timestamp, bins);
@@ -208,10 +261,6 @@ async function handleRequest(request) {
 
       // Second pass: Calculate cumulative totals for all bins
       bins.forEach((bin) => {
-        /*
-        const _bin = parseCustomDate(bin);
-        const time = _bin < endTime || _bin > nowTime;
-        */
         const time = false;
         if (time) {
           cumulativePro = 0;
