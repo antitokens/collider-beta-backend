@@ -7,9 +7,9 @@ account_id = "892973ecf5177f94c0bc003d89f498b6"
 workers_dev = true
 
 [[kv_namespaces]]
-binding = "Antitoken_Collider_Lite"
-id = "c9b47f57c555466c80351019dfbf672f"
-preview_id = "c9b47f57c555466c80351019dfbf672f"
+binding = "Antitoken_Collider_Alpha"
+id = "27907d49fc1b4af2b2a976900317f87e"
+preview_id = "27907d49fc1b4af2b2a976900317f87e"
 
 [vars]
 TZ = "UTC"
