@@ -1,4 +1,5 @@
 import { Connection, PublicKey } from "@solana/web3.js";
+import { compressMetadata } from "./compress";
 
 const endpoint =
   "https://greatest-smart-tent.solana-mainnet.quiknode.pro/c61afb9af2756c92f1dc812ac2a5b8b68c0602ff";
@@ -374,7 +375,9 @@ async function handleRequest(request) {
         },
       };
 
-      return createCorsResponse(JSON.stringify(metadata), { status: 200 });
+      return createCorsResponse(JSON.stringify(compressMetadata(metadata)), {
+        status: 200,
+      });
     } catch (error) {
       console.error("ERROR_GENERATING_BALANCES:", error);
       return createCorsResponse("Error generating balances", { status: 500 });
