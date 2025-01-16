@@ -46,12 +46,73 @@ const duration = (() => {
   }
 })();
 
-function formatUTCDateTime(date, binningStrategy = null) {}
+function formatUTCDateTime(date, binningStrategy = null) {
+  if (binningStrategy === "daily") {
+    return date.toLocaleDateString("en-US", {
+      timeZone: "UTC",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  }
+  return date.toLocaleDateString("en-US", {
+    timeZone: "UTC",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
 
-function parseCustomDate(dateStr) {}
+function parseCustomDate(dateStr) {
+  const parts = dateStr.split(", ");
+  const hasTime = parts.length > 2;
+  const monthDay = parts[0];
+  const year = parts[1];
+  const time = hasTime ? parts[2] : null;
+  const [month, day] = monthDay.split(" ");
+
+  const months = {
+    Jan: 0,
+    Feb: 1,
+    Mar: 2,
+    Apr: 3,
+    May: 4,
+    Jun: 5,
+    Jul: 6,
+    Aug: 7,
+    Sep: 8,
+    Oct: 9,
+    Nov: 10,
+    Dec: 11,
+  };
+
+  if (hasTime) {
+    const [hour, period] = time.split(" ");
+    let hour24 = parseInt(hour);
+    if (period === "PM" && hour24 !== 12) hour24 += 12;
+    if (period === "AM" && hour24 === 12) hour24 = 0;
+
+    return new Date(
+      Date.UTC(parseInt(year), months[month], parseInt(day), hour24)
+    );
+  }
+
+  return new Date(Date.UTC(parseInt(year), months[month], parseInt(day)));
+}
 
 // Binning helper
-const findBinForTimestamp = (timestamp, bins) => {};
+const findBinForTimestamp = (timestamp, bins) => {
+  const timestampDate = new Date(timestamp);
+  return (
+    bins.findLast((bin) => {
+      const binDate = parseCustomDate(bin);
+      return binDate.getTime() <= timestampDate.getTime();
+    }) || bins[0]
+  );
+};
 
 addEventListener("fetch", (event) => {
   event.respondWith(handleRequest(event.request));
