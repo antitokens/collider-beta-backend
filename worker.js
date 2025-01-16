@@ -5,11 +5,11 @@ const endpoint =
 const ORIGINS = ["https://lite.antitoken.pro", "http://localhost:3000"];
 const ANTI_TOKEN_MINT = "EWkvvNnLasHCBpeDbitzx9pC8PMX4QSdnMPfxGsFpump";
 const PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump";
-const KV = Antitoken_Collider_Lite;
+const KV = Antitoken_Collider_Beta;
 
 // Set duration
-const START_TIME = "2025-01-12T00:00:00.000Z";
-const END_TIME = "2025-01-18T00:00:00.000Z";
+const START_TIME = "2025-01-14T15:15:00.000Z";
+const END_TIME = "2025-01-16T15:15:00.000Z";
 
 // Calculate globals
 const startTime = new Date(START_TIME);
@@ -152,7 +152,25 @@ async function handleRequest(request) {
   if (request.method === "GET" && path === "/claims") {
     try {
       const nowTime = new Date();
-
+      const timeDiffHoursPost =
+        nowTime > endTime ? (nowTime - endTime) / (1000 * 60 * 60) : 0;
+      // Calculate binning based on binning strategy
+      const durationPost = (() => {
+        switch (binningStrategy) {
+          case "hourly":
+            // Pad with 1 bin each to the left & right (+ 1)
+            return Math.ceil(timeDiffHoursPost) + 3;
+          case "6-hour":
+            // Pad with 1 bin each to the left & right (+ 1)
+            return Math.ceil(timeDiffHoursPost / 6) + 3;
+          case "12-hour":
+            // Pad with 1 bin each to the left & right (+ 1)
+            return Math.ceil(timeDiffHoursPost / 12) + 3;
+          default:
+            // Pad with 1 bin each to the left & right (+ 1)
+            return Math.ceil((nowTime - endTime) / (1000 * 60 * 60 * 24)) + 3;
+        }
+      })();
       // Get all account claims
       const accountValues = JSON.parse(
         (await KV.get("account_claims")) || "{}"
@@ -185,8 +203,8 @@ async function handleRequest(request) {
       });
 
       // Calculate events over time (last N +/- 1 bins)
-      const bins = Array.from({ length: duration }, (_, i) => {
-        const bins = new Date(END_TIME);
+      const bins = Array.from({ length: durationPost }, (_, i) => {
+        const bins = nowTime;
         switch (binningStrategy) {
           case "hourly":
             bins.setUTCHours(bins.getUTCHours() - i + 1);
@@ -233,25 +251,25 @@ async function handleRequest(request) {
               ),
             ];
 
-            // For each wallet, find their latest event
+            // For each wallet, find their latest event within the time window
             const walletContributions = uniqueWallets.map((wallet) => {
-              // Since events are chronologically indexed, find the last event for this wallet
-              const latestEvent = Object.values(events)
-                .filter((event) => event && event.wallet === wallet)
-                .pop(); // Gets last element since events are chronologically indexed
-              return latestEvent;
+              // Filter events for this wallet that fall within the time window
+              const walletEvents = Object.values(events).filter(
+                (event) =>
+                  event &&
+                  event.wallet === wallet &&
+                  new Date(event.timestamp) > new Date(endTime)
+              );
+
+              // Get the latest event within the filtered time window
+              return walletEvents.length > 0
+                ? walletEvents[walletEvents.length - 1]
+                : null;
             });
 
             // Sum up all wallet contributions into bins
             walletContributions.forEach((event) => {
               if (!event || !event.timestamp) return;
-              /*
-              const time =
-                new Date(event.timestamp) < endTime ||
-                new Date(event.timestamp) > nowTime;
-              */
-              const time = new Date(event.timestamp) < endTime;
-              if (time) return;
               const eventBin = findBinForTimestamp(event.timestamp, bins);
               if (eventsByBin[eventBin]) {
                 eventsByBin[eventBin].anti += Number(event.anti) || 0;
@@ -266,22 +284,10 @@ async function handleRequest(request) {
 
       // Second pass: Calculate cumulative totals for all bins
       bins.forEach((bin) => {
-        /*
-        const _bin = parseCustomDate(bin);
-        const time = _bin < endTime || _bin > nowTime;
-        */
-        const time = false;
-        if (time) {
-          cumulativePro = 0;
-          cumulativeAnti = 0;
-          cumulativeBaryon = 0;
-          cumulativePhoton = 0;
-        } else {
-          cumulativePro += eventsByBin[bin].pro;
-          cumulativeAnti += eventsByBin[bin].anti;
-          cumulativeBaryon += eventsByBin[bin].baryon;
-          cumulativePhoton += eventsByBin[bin].photon;
-        }
+        cumulativePro += eventsByBin[bin].pro;
+        cumulativeAnti += eventsByBin[bin].anti;
+        cumulativeBaryon += eventsByBin[bin].baryon;
+        cumulativePhoton += eventsByBin[bin].photon;
         eventsOverBins[bin] = {
           pro: cumulativePro,
           anti: cumulativeAnti,
@@ -426,8 +432,6 @@ async function handleRequest(request) {
 
   if (request.method === "GET" && path === "/balances") {
     try {
-      const nowTime = new Date();
-
       // Get all account balances
       const accountValues = JSON.parse(
         (await KV.get("account_balances")) || "{}"
@@ -508,28 +512,26 @@ async function handleRequest(request) {
               ),
             ];
 
-            // For each wallet, find their latest event
+            // For each wallet, find their latest event within the time window
             const walletContributions = uniqueWallets.map((wallet) => {
-              // Since events are chronologically indexed, find the last event for this wallet
-              const latestEvent = Object.values(events)
-                .filter((event) => event && event.wallet === wallet)
-                .pop(); // Gets last element since events are chronologically indexed
-              return latestEvent;
+              // Filter events for this wallet that fall within the time window
+              const walletEvents = Object.values(events).filter(
+                (event) =>
+                  event &&
+                  event.wallet === wallet &&
+                  new Date(event.timestamp) >= new Date(startTime) &&
+                  new Date(event.timestamp) <= new Date(endTime)
+              );
+
+              // Get the latest event within the filtered time window
+              return walletEvents.length > 0
+                ? walletEvents[walletEvents.length - 1]
+                : null;
             });
 
             // Sum up all wallet contributions into bins
             walletContributions.forEach((event) => {
               if (!event || !event.timestamp) return;
-              /*
-              const time =
-                new Date(event.timestamp) < startTime ||
-                new Date(event.timestamp) > endTime ||
-                new Date(event.timestamp) > nowTime;
-              */
-              const time =
-                new Date(event.timestamp) < startTime ||
-                new Date(event.timestamp) > endTime;
-              if (time) return;
               const eventBin = findBinForTimestamp(event.timestamp, bins);
               if (eventsByBin[eventBin]) {
                 eventsByBin[eventBin].anti += Number(event.anti) || 0;
@@ -544,22 +546,10 @@ async function handleRequest(request) {
 
       // Second pass: Calculate cumulative totals for all bins
       bins.forEach((bin) => {
-        /*
-        const _bin = parseCustomDate(bin);
-        const time = _bin < startTime || _bin > endTime || _bin > nowTime;
-        */
-        const time = false;
-        if (time) {
-          cumulativePro = 0;
-          cumulativeAnti = 0;
-          cumulativeBaryon = 0;
-          cumulativePhoton = 0;
-        } else {
-          cumulativePro += eventsByBin[bin].pro;
-          cumulativeAnti += eventsByBin[bin].anti;
-          cumulativeBaryon += eventsByBin[bin].baryon;
-          cumulativePhoton += eventsByBin[bin].photon;
-        }
+        cumulativePro += eventsByBin[bin].pro;
+        cumulativeAnti += eventsByBin[bin].anti;
+        cumulativeBaryon += eventsByBin[bin].baryon;
+        cumulativePhoton += eventsByBin[bin].photon;
         eventsOverBins[bin] = {
           pro: cumulativePro,
           anti: cumulativeAnti,
