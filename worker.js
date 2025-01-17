@@ -424,7 +424,9 @@ async function handleRequest(request) {
         },
       };
 
-      return createCorsResponse(JSON.stringify(metadata), { status: 200 });
+      return createCorsResponse(JSON.stringify(compressMetadata(metadata)), {
+        status: 200,
+      });
     } catch (error) {
       console.error("ERROR_GENERATING_CLAIMS:", error);
       return createCorsResponse("Error generating claims", { status: 500 });
@@ -682,7 +684,9 @@ async function handleRequest(request) {
         },
       };
 
-      return createCorsResponse(JSON.stringify(compressMetadata(metadata)), { status: 200 });
+      return createCorsResponse(JSON.stringify(compressMetadata(metadata)), {
+        status: 200,
+      });
     } catch (error) {
       console.error("ERROR_GENERATING_BALANCES:", error);
       return createCorsResponse("Error generating balances", { status: 500 });
