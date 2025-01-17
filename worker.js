@@ -327,31 +327,44 @@ async function handleRequest(request) {
           const _key = await KV.get(key.name);
           if (_key) {
             const events = JSON.parse(_key);
-            // Get array of unique wallets
+
+            // Filter events for this specific poll first
+            const pollEvents = Object.values(events).filter(
+              (event) => event && String(event.poll) === poll
+            );
+
+            // Get array of unique wallets for this poll
             const uniqueWallets = [
               ...new Set(
-                Object.values(events)
+                pollEvents
                   .filter((event) => event && event.wallet)
                   .map((event) => event.wallet)
               ),
             ];
 
-            // For each wallet, find their latest event
-            const walletContributions = uniqueWallets.map((wallet) => {
-              // Since events are chronologically indexed, find the last event for this wallet
-              const latestEvent = Object.values(events)
-                .filter((event) => event && event.wallet === wallet)
-                .pop(); // Gets last element since events are chronologically indexed
-              return latestEvent;
-            });
+            // For each wallet, find their latest event for this poll
+            const walletContributions = uniqueWallets
+              .map((wallet) => {
+                const walletEvents = pollEvents
+                  .filter((event) => event && event.wallet === wallet)
+                  .sort(
+                    (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+                  );
+
+                return walletEvents[0]; // Get most recent event
+              })
+              .filter((event) => event != null); // Remove any null events
 
             // Sum up all wallet contributions into bins
             walletContributions.forEach((event) => {
               if (!event || !event.timestamp) return;
-              const time =
-                new Date(event.timestamp) < startTime ||
-                new Date(event.timestamp) > endTime;
-              if (time) return;
+
+              const eventTime = new Date(event.timestamp);
+              const startDate = new Date(startTime);
+              const endDate = new Date(endTime);
+
+              if (eventTime < startDate || eventTime > endDate) return;
+
               const eventBin = findBinForTimestamp(event.timestamp, bins);
               if (eventsByBin[eventBin]) {
                 eventsByBin[eventBin].anti += Number(event.anti) || 0;
@@ -493,7 +506,7 @@ async function handleRequest(request) {
         timestamp,
       } = await request.json();
 
-      if (!wallet || !signature) {
+      if (!wallet || !signature || !poll) {
         return createCorsResponse("Missing required parameters", {
           status: 400,
         });
@@ -520,12 +533,17 @@ async function handleRequest(request) {
         timestamp: timestamp,
       };
 
-      // Get existing events or create new object
+      // Get existing events
       const existingEvents = JSON.parse((await KV.get(wallet)) || "{}");
-      // Find the next index
-      const nextIndex = Object.keys(existingEvents).length + 1;
-      // Add new event with index
+
+      // Find the actual next index by getting the maximum existing index + 1
+      const currentIndices = Object.keys(existingEvents).map(Number);
+      const nextIndex =
+        currentIndices.length > 0 ? Math.max(...currentIndices) + 1 : 1;
+
+      // Add new event with the correct next index
       existingEvents[nextIndex] = eventRecord;
+
       // Save the updated events
       await KV.put(wallet, JSON.stringify(existingEvents));
 
