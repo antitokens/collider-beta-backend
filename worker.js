@@ -701,32 +701,26 @@ async function handleRequest(request) {
         });
       }
 
-      // Check if wallet has submitted in the last 24 hours
-      const walletSubmissions = await KV.get(wallet);
-      if (walletSubmissions) {
-        const submissions = JSON.parse(walletSubmissions);
-        const recentSubmission = Object.values(submissions).find(
-          (submission) => {
-            const submissionTime = new Date(submission.timestamp).getTime();
-            const currentTime = new Date().getTime();
-            const hoursDiff = (currentTime - submissionTime) / (1000 * 60 * 60);
-            return hoursDiff < 24;
-          }
-        );
+      // Get all polls
+      const allPolls = JSON.parse((await KV.get("polls")) || "{}");
 
-        if (recentSubmission) {
-          return createCorsResponse("NOT_ALLOWED", {
-            status: 202,
-          });
-        }
+      // Check if wallet has any previous polls
+      const hasPreviousPoll = Object.values(allPolls).some(
+        (poll) => poll.wallet === wallet
+      );
+
+      if (hasPreviousPoll) {
+        return createCorsResponse("NOT_ALLOWED", {
+          status: 202,
+        });
       }
+
       return createCorsResponse("ALLOWED", { status: 200 });
     } catch (error) {
       console.error("ERROR_HANDLING_CHECK:", error);
       return createCorsResponse("Invalid request", { status: 400 });
     }
   }
-
   return createCorsResponse("NOT_FOUND", { status: 404 });
 }
 
