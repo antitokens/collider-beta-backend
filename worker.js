@@ -9,8 +9,8 @@ const PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump";
 const KV = Antitoken_Collider_Beta;
 
 // Set duration
-const START_TIME = "2025-01-14T18:00:00.000Z";
-const END_TIME = "2025-01-16T17:33:00.000Z";
+const START_TIME = "2025-01-15T09:00:00.000Z";
+const END_TIME = "2025-01-17T09:00:00.000Z";
 
 // Calculate globals
 const startTime = new Date(START_TIME);
@@ -423,7 +423,7 @@ async function handleRequest(request) {
           },
         },
       };
-
+      
       return createCorsResponse(JSON.stringify(compressMetadata(metadata)), { status: 200 });
     } catch (error) {
       console.error("ERROR_GENERATING_CLAIMS:", error);
