@@ -1,8 +1,5 @@
-import { Connection, PublicKey } from "@solana/web3.js";
 import { compressMetadata } from "./compress";
 
-const endpoint =
-  "https://greatest-smart-tent.solana-mainnet.quiknode.pro/c61afb9af2756c92f1dc812ac2a5b8b68c0602ff";
 const ORIGINS = ["https://poll.antitoken.pro", "http://localhost:3000"];
 const ANTI_TOKEN_MINT = "EWkvvNnLasHCBpeDbitzx9pC8PMX4QSdnMPfxGsFpump";
 const PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump";
@@ -196,18 +193,10 @@ addEventListener("fetch", (event) => {
 // Get token supply helper
 async function getTokenSupply(tokenMintAddress) {
   try {
-    const mintPubkey = new PublicKey(tokenMintAddress);
-    const connection = new Connection(endpoint, "confirmed");
-    // Get token supply
-    const supply = await connection.getTokenSupply(mintPubkey);
-    // Get decimals
-    const mintInfo = await connection.getParsedAccountInfo(mintPubkey);
-    const decimals = mintInfo.value?.data.parsed.info.decimals || 0;
-
     return {
-      totalSupply: supply.value.uiAmount,
-      decimals: decimals,
-      rawSupply: supply.value.amount,
+      totalSupply: 1e9,
+      decimals: 18,
+      rawSupply: 1e9,
     };
   } catch (error) {
     console.error("Error fetching token supply:", error);
