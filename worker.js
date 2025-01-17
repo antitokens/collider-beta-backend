@@ -8,6 +8,79 @@ const ANTI_TOKEN_MINT = "EWkvvNnLasHCBpeDbitzx9pC8PMX4QSdnMPfxGsFpump";
 const PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump";
 const KV = Antitoken_Collider_Poll;
 
+// Constants
+const metadataInit = {
+  startTime: "-",
+  endTime: "-",
+  colliderDistribution: {
+    u: 0,
+    s: 0,
+    range: [],
+    distribution: [],
+    short: [],
+    curve: [],
+  },
+  totalDistribution: {
+    u: 0,
+    s: 0,
+    bags: {
+      pro: [],
+      anti: [],
+      photon: [],
+      baryon: [],
+    },
+    wallets: [],
+  },
+  emissionsData: {
+    total: 0,
+    photonTokens: 0,
+    baryonTokens: 0,
+  },
+  collisionsData: {
+    total: 1e9,
+    proTokens: 0,
+    antiTokens: 0,
+  },
+  eventsOverTime: {
+    timestamps: ["", "", "", "", ""],
+    events: {
+      pro: [],
+      anti: [],
+      photon: [],
+      baryon: [],
+    },
+    ranges: {
+      pro: {
+        "0-100k": 0,
+        "100k-1m": 0,
+        "1-10m": 0,
+      },
+      anti: {
+        "0-100k": 0,
+        "100k-1m": 0,
+        "1-10m": 0,
+      },
+      photon: {
+        "0-100k": 0,
+        "100k-1m": 0,
+        "1-10m": 0,
+      },
+      baryon: {
+        "0-100k": 0,
+        "100k-1m": 0,
+        "1-10m": 0,
+      },
+    },
+    cumulative: {
+      timestamps: [],
+      pro: [],
+      anti: [],
+      photon: [],
+      baryon: [],
+    },
+  },
+};
+
 // Calculate globals
 function getGlobal(startTimestamp, endTimestamp) {
   let binningStrategy;
@@ -166,29 +239,63 @@ async function handleRequest(request) {
     const poll = path.split("/")[2];
     // Get all polls
     const allPolls = JSON.parse((await KV.get("polls")) || "{}");
-    const [binningStrategy, duration] = getGlobal(
-      allPolls[Number(poll)].schedule[0],
-      allPolls[Number(poll)].schedule[1]
-    );
+    // Return if empty
+    if (JSON.stringify(allPolls) === "{}") {
+      return createCorsResponse(
+        JSON.stringify(compressMetadata(metadataInit)),
+        {
+          status: 201,
+        }
+      );
+    }
+
     try {
+      // Get config
+      const [binningStrategy, duration] = getGlobal(
+        allPolls[Number(poll)].schedule[0],
+        allPolls[Number(poll)].schedule[1]
+      );
+      const startTime = allPolls[Number(poll)].schedule[0];
+      const endTime = allPolls[Number(poll)].schedule[1];
+
       // Get all account balances
       const accountValues = JSON.parse(
         (await KV.get("account_balances_" + poll)) || "{}"
       );
+
+      if (JSON.stringify(accountValues) === "{}") {
+        return createCorsResponse(
+          JSON.stringify(compressMetadata(metadataInit)),
+          {
+            status: 201,
+          }
+        );
+      }
+
+      // Calculate emissions data
+      let totalBaryonTokens = 0;
+      let totalPhotonTokens = 0;
+      let baryonBalances = [];
+      let photonBalances = [];
+      let addresses = [];
+      Object.entries(accountValues).forEach(([wallet, balance]) => {
+        totalBaryonTokens += balance.baryon;
+        totalPhotonTokens += balance.photon;
+        baryonBalances.push(balance.baryon);
+        photonBalances.push(balance.photon);
+        addresses.push(wallet);
+      });
 
       // Calculate total tokens
       let totalAntiTokens = 0;
       let totalProTokens = 0;
       let antiBalances = [];
       let proBalances = [];
-      let addresses = [];
-
       Object.values(accountValues).forEach((balance) => {
         totalAntiTokens += balance.anti;
         totalProTokens += balance.pro;
         antiBalances.push(balance.anti);
         proBalances.push(balance.pro);
-        addresses.push(wallet);
       });
 
       // Calculate events over time (last N +/- 1 bins)
@@ -227,7 +334,7 @@ async function handleRequest(request) {
 
       // First pass: Calculate by-bin totals
       for (const key of allEvents.keys) {
-        if (key.name.startsWith("account_balances_")) {
+        if (!key.name.startsWith("account_balances_") && key.name !== "polls") {
           const _key = await KV.get(key.name);
           if (_key) {
             const events = JSON.parse(_key);
@@ -325,20 +432,20 @@ async function handleRequest(request) {
           s: 0,
         },
         totalDistribution: {
-          u: 0,
-          s: 0,
+          u: totalBaryonTokens,
+          s: totalPhotonTokens,
           bags: {
             pro: proBalances,
             anti: antiBalances,
-            photon: 0,
-            baryon: 0,
+            photon: photonBalances,
+            baryon: baryonBalances,
           },
           wallets: addresses,
         },
         emissionsData: {
-          total: 0,
-          baryonTokens: 0,
-          photonTokens: 0,
+          total: totalBaryonTokens + totalPhotonTokens,
+          baryonTokens: totalBaryonTokens,
+          photonTokens: totalPhotonTokens,
         },
         collisionsData: {
           total: await Promise.all([
@@ -470,7 +577,7 @@ async function handleRequest(request) {
       accountValues = JSON.parse(
         (await KV.get("account_balances_" + poll)) || "{}"
       );
-    } else if (Number(poll) === -1) {
+    } else if (Number(poll) === 0) {
       // Get list of all account_balances_* and add them up
       const keyList = await KV.list({ prefix: "account_balances_" });
       accountValues = {};
@@ -525,15 +632,38 @@ async function handleRequest(request) {
         });
       }
 
+      // Check if wallet has submitted in the last 24 hours
+      const walletSubmissions = await KV.get(wallet);
+      if (walletSubmissions) {
+        const submissions = JSON.parse(walletSubmissions);
+        const recentSubmission = Object.values(submissions).find(
+          (submission) => {
+            const submissionTime = new Date(submission.timestamp).getTime();
+            const currentTime = new Date().getTime();
+            const hoursDiff = (currentTime - submissionTime) / (1000 * 60 * 60);
+            return hoursDiff < 24;
+          }
+        );
+
+        if (recentSubmission) {
+          return createCorsResponse(
+            "You can only submit one poll every 24 hours",
+            {
+              status: 202,
+            }
+          );
+        }
+      }
+
       // Create event record
       const eventRecord = {
-        poll: poll,
-        title: title,
-        description: description,
-        schedule: schedule,
-        wallet: wallet,
-        signature: signature,
-        timestamp: timestamp,
+        poll,
+        title,
+        description,
+        schedule,
+        wallet,
+        signature,
+        timestamp,
       };
 
       // Get existing events or create new object
@@ -542,12 +672,57 @@ async function handleRequest(request) {
       const nextIndex = Object.keys(existingEvents).length + 1;
       // Add new event with index
       existingEvents[nextIndex] = eventRecord;
-      // Save the updated events
-      await KV.put(wallet, JSON.stringify(existingEvents));
+
+      // Save to both the polls collection and wallet-specific records
+      await Promise.all([
+        KV.put("polls", JSON.stringify(existingEvents)),
+        KV.put(
+          wallet,
+          JSON.stringify({
+            [nextIndex]: eventRecord,
+          })
+        ),
+      ]);
 
       return createCorsResponse("New poll added", { status: 200 });
     } catch (error) {
       console.error("ERROR_HANDLING_NEW_POLL:", error);
+      return createCorsResponse("Invalid request", { status: 400 });
+    }
+  }
+
+  if (request.method === "GET" && path.startsWith("/check/")) {
+    try {
+      const wallet = path.split("/")[2];
+
+      if (!wallet) {
+        return createCorsResponse("Missing required parameters", {
+          status: 400,
+        });
+      }
+
+      // Check if wallet has submitted in the last 24 hours
+      const walletSubmissions = await KV.get(wallet);
+      if (walletSubmissions) {
+        const submissions = JSON.parse(walletSubmissions);
+        const recentSubmission = Object.values(submissions).find(
+          (submission) => {
+            const submissionTime = new Date(submission.timestamp).getTime();
+            const currentTime = new Date().getTime();
+            const hoursDiff = (currentTime - submissionTime) / (1000 * 60 * 60);
+            return hoursDiff < 24;
+          }
+        );
+
+        if (recentSubmission) {
+          return createCorsResponse("NOT_ALLOWED", {
+            status: 202,
+          });
+        }
+      }
+      return createCorsResponse("ALLOWED", { status: 200 });
+    } catch (error) {
+      console.error("ERROR_HANDLING_CHECK:", error);
       return createCorsResponse("Invalid request", { status: 400 });
     }
   }
@@ -568,8 +743,15 @@ function createCorsResponse(body, init = {}, ORIGINS = []) {
   headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   headers.set("Access-Control-Allow-Headers", "Content-Type");
   headers.set("Content-Type", "application/json");
+
+  // Get status from init or default to 200
+  const status = init.status || 200;
+
   const jsonBody =
-    typeof body === "string" ? JSON.stringify({ message: body }) : body;
+    typeof body === "string"
+      ? JSON.stringify({ message: body, status: status })
+      : JSON.stringify({ ...body, status: status });
+
   return new Response(jsonBody, { ...init, headers });
 }
 
