@@ -8,8 +8,8 @@ workers_dev = true
 
 [[kv_namespaces]]
 binding = "Antitoken_Collider_Poll"
-id = "c9b47f57c555466c80351019dfbf672f"
-preview_id = "c9b47f57c555466c80351019dfbf672f"
+id = "17643f1fa8414f84ab512e065efb3b06"
+preview_id = "17643f1fa8414f84ab512e065efb3b06"
 
 [vars]
 TZ = "UTC"
