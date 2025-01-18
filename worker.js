@@ -4,8 +4,8 @@ import { compressMetadata } from "./compress";
 const endpoint =
   "https://greatest-smart-tent.solana-mainnet.quiknode.pro/c61afb9af2756c92f1dc812ac2a5b8b68c0602ff";
 const ORIGINS = ["https://app.antitoken.pro"];
-const ANTI_TOKEN_MINT = "EWkvvNnLasHCBpeDbitzx9pC8PMX4QSdnMPfxGsFpump";
-const PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump";
+const ANTI_TOKEN_MINT = "HB8KrN7Bb3iLWUPsozp67kS4gxtbA4W5QJX4wKPvpump";
+const PRO_TOKEN_MINT = "CWFa2nxUMf5d1WwKtG9FS9kjUKGwKXWSjH8hFdWspump";
 const KV = Antitoken_Collider_Alpha;
 
 // Set duration
