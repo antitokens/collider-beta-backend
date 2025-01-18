@@ -1,8 +1,8 @@
 import { compressMetadata } from "./compress";
 
-const ORIGINS = ["https://poll.antitoken.pro", "http://localhost:3000"];
-const ANTI_TOKEN_MINT = "EWkvvNnLasHCBpeDbitzx9pC8PMX4QSdnMPfxGsFpump";
-const PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump";
+const ORIGINS = ["https://poll.antitoken.pro"];
+const ANTI_TOKEN_MINT = "HB8KrN7Bb3iLWUPsozp67kS4gxtbA4W5QJX4wKPvpump";
+const PRO_TOKEN_MINT = "CWFa2nxUMf5d1WwKtG9FS9kjUKGwKXWSjH8hFdWspump";
 const KV = Antitoken_Collider_Poll;
 
 // Constants
