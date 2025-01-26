@@ -6,7 +6,7 @@ const endpoint =
 const ORIGINS = ["https://app.antitoken.pro"];
 const ANTI_TOKEN_MINT = "HB8KrN7Bb3iLWUPsozp67kS4gxtbA4W5QJX4wKPvpump";
 const PRO_TOKEN_MINT = "CWFa2nxUMf5d1WwKtG9FS9kjUKGwKXWSjH8hFdWspump";
-const KV = Antitoken_Collider_Alpha;
+const KV = Alpha;
 
 // Set duration
 const START_TIME = "2025-01-06T00:00:00.000Z";

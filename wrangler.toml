@@ -1,15 +1,15 @@
 # wrangler.toml
-name = "collider-alpha-backend"
+name = "alpha"
 compatibility_date = "2024-12-04"
 
 [env]
-account_id = "892973ecf5177f94c0bc003d89f498b6"
+account_id = "b3562d79a9d4c362302e30e42e77a112"
 workers_dev = true
 
 [[kv_namespaces]]
-binding = "Antitoken_Collider_Alpha"
-id = "27907d49fc1b4af2b2a976900317f87e"
-preview_id = "27907d49fc1b4af2b2a976900317f87e"
+binding = "Alpha"
+id = "0aec69714b204ea4912a7d622473ee85"
+preview_id = "0aec69714b204ea4912a7d622473ee85"
 
 [vars]
 TZ = "UTC"
