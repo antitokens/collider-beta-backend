@@ -1,15 +1,15 @@
 # wrangler.toml
-name = "collider-poll-backend"
+name = "polls"
 compatibility_date = "2024-12-04"
 
 [env]
-account_id = "892973ecf5177f94c0bc003d89f498b6"
+account_id = "b3562d79a9d4c362302e30e42e77a112"
 workers_dev = true
 
 [[kv_namespaces]]
-binding = "Antitoken_Collider_Poll"
-id = "17643f1fa8414f84ab512e065efb3b06"
-preview_id = "17643f1fa8414f84ab512e065efb3b06"
+binding = "Polls"
+id = "94a83270f1604418b82e36124b462c88"
+preview_id = "94a83270f1604418b82e36124b462c88"
 
 [vars]
 TZ = "UTC"
