@@ -1,6 +1,7 @@
 # wrangler.toml
 name = "lite"
 compatibility_date = "2024-12-04"
+main = "worker.js"
 
 [env]
 account_id = "b3562d79a9d4c362302e30e42e77a112"
