@@ -1,0 +1,21 @@
+# wrangler.toml
+name = "lite-beta"
+compatibility_date = "2024-12-04"
+main = "worker.js"
+
+[env]
+account_id = "..."
+workers_dev = true
+
+[[kv_namespaces]]
+binding = "..."
+id = "..."
+preview_id = "..."
+
+[vars]
+TZ = "UTC"
+KV = "..."
+ANTI_TOKEN_MINT = "..."
+PRO_TOKEN_MINT = "..."
+SOL_RPC = "..."
+

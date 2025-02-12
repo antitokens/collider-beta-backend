@@ -1,5 +1,5 @@
 # wrangler.toml
-name = "lite"
+name = "lite-beta"
 compatibility_date = "2024-12-04"
 main = "worker.js"
 
@@ -8,9 +8,14 @@ account_id = "b3562d79a9d4c362302e30e42e77a112"
 workers_dev = true
 
 [[kv_namespaces]]
-binding = "Alpha"
-id = "0aec69714b204ea4912a7d622473ee85"
-preview_id = "0aec69714b204ea4912a7d622473ee85"
+binding = "Beta"
+id = "5d3c8c4b9b314ad98f71bb831efccbf6"
+preview_id = "5d3c8c4b9b314ad98f71bb831efccbf6"
 
 [vars]
 TZ = "UTC"
+KV = "Beta"
+ANTI_TOKEN_MINT = "EWkvvNnLasHCBpeDbitzx9pC8PMX4QSdnMPfxGsFpump"
+PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump"
+SOL_RPC = "https://greatest-smart-tent.solana-mainnet.quiknode.pro/c61afb9af2756c92f1dc812ac2a5b8b68c0602ff"
+

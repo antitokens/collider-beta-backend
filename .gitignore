@@ -13,7 +13,11 @@ docs/
 # Dotenv file
 .env
 .wrangler
+wrangler.toml
 
+# Packages
 node_modules
+
+# Miscellaneous
 .DS_store
 **/.DS_Store
