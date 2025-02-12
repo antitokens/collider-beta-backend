@@ -1,7 +1,7 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 import { compressMetadata } from "./compress";
 
-const ORIGINS = ["https://lite.antitoken.pro", "http://localhost:3000"];
+const ORIGINS = ["https://lite.antitoken.pro"];
 
 const endpoint = env.SOL_RPC;
 const ANTI_TOKEN_MINT = env.ANTI_TOKEN_MINT;
@@ -1164,7 +1164,7 @@ async function handleRequest(request) {
     }
   }
 
-  /// pre-check before adding a new prediction
+  /// Pre-check before adding a new prediction
   if (request.method === "GET" && path.startsWith("/check/")) {
     try {
       const wallet = path.split("/")[2];
