@@ -1,15 +1,15 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 import { compressMetadata } from "./compress";
 
-const ORIGINS = ["https://lite.antitoken.pro"];
+const ORIGINS = ["https://lite.antitoken.pro", "http://localhost:3000"];
+const KV = Beta;
+const ANTI_TOKEN_MINT = "EWkvvNnLasHCBpeDbitzx9pC8PMX4QSdnMPfxGsFpump";
+const PRO_TOKEN_MINT = "FGWJcZQ3ex8TRPC127NsQBpoXhJXeL2FFpRdKFjRpump";
+const ENDPOINT =
+  "https://greatest-smart-tent.solana-mainnet.quiknode.pro/c61afb9af2756c92f1dc812ac2a5b8b68c0602ff";
 
-const endpoint = env.SOL_RPC;
-const ANTI_TOKEN_MINT = env.ANTI_TOKEN_MINT;
-const PRO_TOKEN_MINT = env.PRO_TOKEN_MINT;
-const KV = env.KV;
-
-/// Constants
-const metadataInit = ({ supply = 1e9 }) => {
+// Constants
+const metadataInit = (supply = 1e9) => {
   return {
     startTime: "-",
     endTime: "-",
@@ -83,7 +83,7 @@ const metadataInit = ({ supply = 1e9 }) => {
   };
 };
 
-/// Calculate globals
+// Calculate globals
 function getGlobal(startTimestamp, endTimestamp) {
   let binningStrategy;
 
@@ -123,7 +123,7 @@ function getGlobal(startTimestamp, endTimestamp) {
   return [binningStrategy, duration];
 }
 
-/// Format time according to binning
+// Format time according to binning
 function formatUTCDateTime(date, binningStrategy = null) {
   if (binningStrategy === "daily") {
     return date.toLocaleDateString("en-US", {
@@ -144,7 +144,7 @@ function formatUTCDateTime(date, binningStrategy = null) {
   });
 }
 
-/// Parse custom date format used by frontend
+// Parse custom date format used by frontend
 function parseCustomDate(dateStr) {
   const parts = dateStr.split(", ");
   const hasTime = parts.length > 2;
@@ -182,7 +182,7 @@ function parseCustomDate(dateStr) {
   return new Date(Date.UTC(parseInt(year), months[month], parseInt(day)));
 }
 
-/// Binning helper
+// Binning helper
 const findBinForTimestamp = (timestamp, bins) => {
   const timestampDate = new Date(timestamp);
   return (
@@ -197,9 +197,9 @@ addEventListener("fetch", (event) => {
   event.respondWith(handleRequest(event.request));
 });
 
-/// Get token supply helper
+// Get token supply helper
 async function getTokenSupply(tokenMintAddress) {
-  // CHECK: Bypass supply query
+  /// CHECK: Bypass supply query
   return {
     totalSupply: 1e9,
     decimals: 1e8,
@@ -208,7 +208,7 @@ async function getTokenSupply(tokenMintAddress) {
 
   try {
     const mintPubkey = new PublicKey(tokenMintAddress);
-    const connection = new Connection(endpoint, "confirmed");
+    const connection = new Connection(ENDPOINT, "confirmed");
     // Get token supply
     const supply = await connection.getTokenSupply(mintPubkey);
     // Get decimals
@@ -226,7 +226,7 @@ async function getTokenSupply(tokenMintAddress) {
   }
 }
 
-/// Universal request handler
+// Universal request handler
 async function handleRequest(request) {
   const url = new URL(request.url);
   const path = url.pathname;
@@ -236,7 +236,7 @@ async function handleRequest(request) {
     return handleCorsPreflight(request, ORIGINS);
   }
 
-  /// Query all predictions
+  // Query all predictions
   if (request.method === "GET" && path === "/predictions") {
     try {
       // Get all predictions
@@ -250,7 +250,7 @@ async function handleRequest(request) {
     }
   }
 
-  /// Query all global withdrawals
+  // Query all global withdrawals
   if (request.method === "GET" && path === "/withdrawals") {
     const prediction = path.split("/")[2];
     // Get all predictions
@@ -549,7 +549,7 @@ async function handleRequest(request) {
     }
   }
 
-  /// Query all global balances
+  // Query all global balances
   if (request.method === "GET" && path === "/balances") {
     const prediction = path.split("/")[2];
     // Get all predictions
@@ -846,7 +846,7 @@ async function handleRequest(request) {
     }
   }
 
-  /// Make a prediction (deposit)
+  // Make a prediction (deposit)
   if (request.method === "POST" && path === "/predict") {
     try {
       const {
@@ -925,7 +925,7 @@ async function handleRequest(request) {
     }
   }
 
-  /// Claim returns for a prediction (withdraw)
+  // Claim returns for a prediction (withdraw)
   if (request.method === "POST" && path === "/withdraw") {
     try {
       const {
@@ -995,12 +995,12 @@ async function handleRequest(request) {
     }
   }
 
-  /// Query balance for a specific wallet and prediction
+  // Query balance for a specific wallet and prediction
   if (request.method === "GET" && path.startsWith("/balance/")) {
     const prediction = path.split("/")[2];
     const wallet = path.split("/")[3];
     let accounts;
-    if (Number(prediction) >= 0) {
+    if (Number(prediction) > 0) {
       accounts = JSON.parse((await KV.get("balances_" + prediction)) || "{}");
     } else if (Number(prediction) === 0) {
       // Get list of all balances_* and add them up
@@ -1039,12 +1039,12 @@ async function handleRequest(request) {
     return createCorsResponse(JSON.stringify(balance), { status: 200 });
   }
 
-  /// Query withdrawals for a specific wallet and prediction
+  // Query withdrawals for a specific wallet and prediction
   if (request.method === "GET" && path.startsWith("/withdrawal/")) {
     const prediction = path.split("/")[2];
     const wallet = path.split("/")[3];
     let accounts;
-    if (Number(prediction) >= 0) {
+    if (Number(prediction) > 0) {
       accounts = JSON.parse(
         (await KV.get("withdrawals_" + prediction)) || "{}"
       );
@@ -1056,7 +1056,8 @@ async function handleRequest(request) {
       // Fetch and combine all withdrawals
       for (const key of keyList.keys) {
         // Access the keys array from the returned object
-        const withdrawals = JSON.parse((await KV.get(key.name)) || "{}"); // Use key.name to get the actual key string
+        // Use key.name to get the actual key string
+        const withdrawals = JSON.parse((await KV.get(key.name)) || "{}");
 
         // Add this prediction's withdrawals to the total
         if (withdrawals[wallet]) {
@@ -1086,7 +1087,7 @@ async function handleRequest(request) {
     return createCorsResponse(JSON.stringify(balance), { status: 200 });
   }
 
-  /// Add a new prediction
+  // Add a new prediction
   if (request.method === "POST" && path === "/add") {
     try {
       const {
@@ -1137,6 +1138,8 @@ async function handleRequest(request) {
         wallet,
         signature,
         timestamp,
+        resolved: false,
+        truth: [0, 0],
       };
 
       // Get existing events or create new object
@@ -1164,7 +1167,7 @@ async function handleRequest(request) {
     }
   }
 
-  /// Pre-check before adding a new prediction
+  // Pre-check before adding a new prediction
   if (request.method === "GET" && path.startsWith("/check/")) {
     try {
       const wallet = path.split("/")[2];
@@ -1196,11 +1199,11 @@ async function handleRequest(request) {
     }
   }
 
-  /// Catch-all return
+  // Catch-all return
   return createCorsResponse("NOT_FOUND", { status: 404 });
 }
 
-/// Helpder to create valid CORD response with headers
+// Helpder to create valid CORD response with headers
 function createCorsResponse(body, init = {}, ORIGINS = []) {
   const headers = new Headers(init.headers || {});
   // Get the request origin from init or default to '*'
@@ -1226,7 +1229,7 @@ function createCorsResponse(body, init = {}, ORIGINS = []) {
   return new Response(content, { ...init, headers });
 }
 
-/// Helper for CORS pre-flight
+// Helper for CORS pre-flight
 function handleCorsPreflight(request = {}, ORIGINS = []) {
   const headers = new Headers();
   // Get the request origin from the OPTIONS request
