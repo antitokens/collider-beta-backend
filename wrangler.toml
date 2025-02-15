@@ -1,0 +1,16 @@
+# wrangler.toml
+name = "lite-beta"
+compatibility_date = "2024-12-04"
+main = "worker.js"
+
+[env]
+account_id = "b3562d79a9d4c362302e30e42e77a112"
+workers_dev = true
+
+[[kv_namespaces]]
+binding = "Beta"
+id = "5d3c8c4b9b314ad98f71bb831efccbf6"
+preview_id = "5d3c8c4b9b314ad98f71bb831efccbf6"
+
+[vars]
+TZ = "UTC"
