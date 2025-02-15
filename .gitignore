@@ -13,7 +13,6 @@ docs/
 # Dotenv file
 .env
 .wrangler
-wrangler.toml
 
 # Packages
 node_modules
