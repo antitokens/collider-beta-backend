@@ -1139,7 +1139,8 @@ async function handleRequest(request) {
         signature,
         timestamp,
         resolved: false,
-        truth: [0, 0],
+        confirmed: false,
+        truth: [],
       };
 
       // Get existing events or create new object
