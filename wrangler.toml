@@ -1,5 +1,5 @@
 # wrangler.toml
-name = "lite-beta"
+name = "antitoken-lite-beta"
 compatibility_date = "2024-12-04"
 main = "worker.js"
 
